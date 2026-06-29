@@ -1,0 +1,32 @@
+import { Events, MessageFlags } from 'discord.js';
+
+import type { SakoClient } from '../client.js';
+import { logger } from '../logger.js';
+
+export function registerInteractionCreate(client: SakoClient): void {
+  client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) {
+      logger.warn({ name: interaction.commandName }, 'unknown command');
+      return;
+    }
+
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      logger.error({ err, name: interaction.commandName }, 'command failed');
+      const content = 'something broke running that command. check the logs.';
+      if (interaction.replied || interaction.deferred) {
+        await interaction
+          .followUp({ content, flags: MessageFlags.Ephemeral })
+          .catch(() => {});
+      } else {
+        await interaction
+          .reply({ content, flags: MessageFlags.Ephemeral })
+          .catch(() => {});
+      }
+    }
+  });
+}
