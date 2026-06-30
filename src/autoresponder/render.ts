@@ -1,0 +1,24 @@
+import type { Node } from './ast.js';
+import type { RenderContext } from './context.js';
+import { placeholders } from './placeholders.js';
+
+export function render(nodes: Node[], ctx: RenderContext): string {
+  let out = '';
+
+  for (const node of nodes) {
+    if (node.kind === 'text') {
+      out += node.value;
+      continue;
+    }
+
+    if (node.kind === 'placeholder') {
+      const resolver = placeholders.get(node.name);
+      out += resolver ? resolver(ctx, node.args) : node.raw;
+      continue;
+    }
+
+    out += node.raw;
+  }
+
+  return out;
+}
