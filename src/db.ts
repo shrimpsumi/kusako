@@ -14,6 +14,17 @@ CREATE TABLE IF NOT EXISTS kv (
   value TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS autoresponders (
+  guild_id TEXT NOT NULL,
+  trigger TEXT NOT NULL,
+  trigger_key TEXT NOT NULL,
+  response TEXT NOT NULL,
+  match_mode TEXT NOT NULL DEFAULT 'exact',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, trigger_key)
+);
 `;
 
 let instance: Database.Database | null = null;
