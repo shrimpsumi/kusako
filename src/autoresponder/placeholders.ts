@@ -3,6 +3,7 @@ import type { RenderContext } from './context.js';
 export type Resolver = (ctx: RenderContext, args: string[]) => string;
 
 export const placeholders = new Map<string, Resolver>([
+  ['newline', () => '\n'],
   ['user', (ctx) => ctx.member.toString()],
   ['user.name', (ctx) => ctx.member.user.username],
   ['user.nickname', (ctx) => ctx.member.displayName],
