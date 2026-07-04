@@ -2,7 +2,10 @@ import type { Node } from './ast.js';
 import type { RenderContext } from './context.js';
 import { placeholders } from './placeholders.js';
 
-export function render(nodes: Node[], ctx: RenderContext): string {
+export async function render(
+  nodes: Node[],
+  ctx: RenderContext,
+): Promise<string> {
   let out = '';
 
   for (const node of nodes) {
@@ -13,7 +16,15 @@ export function render(nodes: Node[], ctx: RenderContext): string {
 
     if (node.kind === 'placeholder') {
       const resolver = placeholders.get(node.name);
-      out += resolver ? resolver(ctx, node.args) : node.raw;
+      if (!resolver) {
+        out += node.raw;
+        continue;
+      }
+      try {
+        out += await resolver(ctx, node.args);
+      } catch {
+        out += node.raw;
+      }
       continue;
     }
 

@@ -1,6 +1,9 @@
 import type { RenderContext } from './context.js';
 
-export type Resolver = (ctx: RenderContext, args: string[]) => string;
+export type Resolver = (
+  ctx: RenderContext,
+  args: string[],
+) => string | Promise<string>;
 
 export const placeholders = new Map<string, Resolver>([
   ['newline', () => '\n'],
