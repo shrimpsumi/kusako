@@ -1,3 +1,5 @@
+import { getBalance, getCurrency } from '../economy.js';
+
 import type { RenderContext } from './context.js';
 
 export type Resolver = (
@@ -13,4 +15,10 @@ export const placeholders = new Map<string, Resolver>([
   ['server.name', (ctx) => ctx.guild.name],
   ['server.id', (ctx) => ctx.guild.id],
   ['server.membercount', (ctx) => ctx.guild.memberCount.toString()],
+  [
+    'user.balance',
+    (ctx) => getBalance(ctx.guild.id, ctx.member.id).toLocaleString('en-US'),
+  ],
+  ['server.currency', (ctx) => getCurrency(ctx.guild.id).name],
+  ['server.currencyemoji', (ctx) => getCurrency(ctx.guild.id).emoji],
 ]);
