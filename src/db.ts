@@ -25,6 +25,35 @@ CREATE TABLE IF NOT EXISTS autoresponders (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (guild_id, trigger_key)
 );
+
+CREATE TABLE IF NOT EXISTS guild_settings (
+  guild_id TEXT NOT NULL,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS balances (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  balance INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  delta INTEGER NOT NULL,
+  balance_after INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_guild_user
+  ON transactions (guild_id, user_id);
 `;
 
 let instance: Database.Database | null = null;
