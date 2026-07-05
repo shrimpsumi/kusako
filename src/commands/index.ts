@@ -2,5 +2,14 @@ import type { SlashCommand } from '../client.js';
 
 import { ping } from './ping.js';
 import { autoresponders } from './autoresponders.js';
+import { balance } from './balance.js';
+import { modifybalance } from './modifybalance.js';
+import { settings } from './settings.js';
 
-export const commands: SlashCommand[] = [ping, autoresponders];
+export const commands: SlashCommand[] = [
+  ping,
+  autoresponders,
+  balance,
+  modifybalance,
+  settings,
+];
