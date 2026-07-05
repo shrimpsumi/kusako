@@ -22,7 +22,7 @@ export const autoresponders: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('autoresponders')
     .setDescription("manage this server's autoresponders")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
       sub
         .setName('add')
