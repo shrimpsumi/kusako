@@ -14,9 +14,18 @@ import {
   getAutoresponder,
   listAutoresponders,
 } from '../autoresponder/store.js';
+import { parse } from '../autoresponder/parser.js';
+import { validateTemplate } from '../autoresponder/validate.js';
 
 const TRIGGER_MAX = 100;
 const RESPONSE_MAX = 2000;
+
+function templateIssues(response: string): string | null {
+  const errors = validateTemplate(parse(response));
+  if (errors.length === 0) return null;
+
+  return `hmm, that reply has some problems !!\n${errors.map((e) => `• ${e}`).join('\n')}`;
+}
 
 export const autoresponders: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -106,6 +115,16 @@ export const autoresponders: SlashCommand = {
     if (sub === 'add') {
       const trigger = interaction.options.getString('trigger', true);
       const response = interaction.options.getString('response', true);
+
+      const issues = templateIssues(response);
+      if (issues) {
+        await interaction.reply({
+          content: issues,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
       const created = addAutoresponder(guildId, trigger, response);
 
       await interaction.reply({
@@ -120,6 +139,16 @@ export const autoresponders: SlashCommand = {
     if (sub === 'edit') {
       const trigger = interaction.options.getString('trigger', true);
       const response = interaction.options.getString('response', true);
+
+      const issues = templateIssues(response);
+      if (issues) {
+        await interaction.reply({
+          content: issues,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
       const edited = editAutoresponder(guildId, trigger, response);
 
       await interaction.reply({
