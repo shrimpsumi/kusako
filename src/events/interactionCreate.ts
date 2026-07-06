@@ -5,6 +5,21 @@ import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
   client.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.isAutocomplete()) {
+      const command = client.commands.get(interaction.commandName);
+      if (!command?.autocomplete) return;
+
+      try {
+        await command.autocomplete(interaction);
+      } catch (err) {
+        logger.error(
+          { err, name: interaction.commandName },
+          'autocomplete failed',
+        );
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
