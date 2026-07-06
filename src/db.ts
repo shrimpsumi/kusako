@@ -54,6 +54,29 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE INDEX IF NOT EXISTS idx_transactions_guild_user
   ON transactions (guild_id, user_id);
+
+CREATE TABLE IF NOT EXISTS items (
+  guild_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  name_key TEXT NOT NULL,
+  description TEXT,
+  emoji TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, name_key)
+);
+
+CREATE TABLE IF NOT EXISTS inventories (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id, item_key),
+  FOREIGN KEY (guild_id, item_key)
+    REFERENCES items (guild_id, name_key)
+    ON DELETE CASCADE
+);
 `;
 
 let instance: Database.Database | null = null;
