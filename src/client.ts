@@ -3,6 +3,7 @@ import {
   Collection,
   GatewayIntentBits,
   Partials,
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
   type SlashCommandBuilder,
 } from 'discord.js';
@@ -10,6 +11,7 @@ import {
 export interface SlashCommand {
   data: SlashCommandBuilder;
   execute(interaction: ChatInputCommandInteraction): Promise<void>;
+  autocomplete?(interaction: AutocompleteInteraction): Promise<void>;
 }
 
 export interface SakoClient extends Client {
