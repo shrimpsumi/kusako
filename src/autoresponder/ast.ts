@@ -7,6 +7,7 @@ export interface PlaceholderNode {
   kind: 'placeholder';
   name: string;
   args: string[];
+  captureName: string | null;
   raw: string;
 }
 

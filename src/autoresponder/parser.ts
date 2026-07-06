@@ -1,24 +1,40 @@
 import type { Node } from './ast.js';
 
+function parseHead(head: string): { name: string; captureName: string | null } {
+  const match = /^(.*\S)\s+as\s+(\w+)\s*$/i.exec(head);
+
+  if (match) {
+    return {
+      name: match[1]!.trim().toLowerCase(),
+      captureName: match[2]!.toLowerCase(),
+    };
+  }
+
+  return { name: head.trim().toLowerCase(), captureName: null };
+}
+
 function parsePlaceholder(raw: string): Node {
   const inner = raw.slice(1, -1);
   const sep = inner.indexOf(':');
+  const head = sep === -1 ? inner : inner.slice(0, sep);
+  const { name, captureName } = parseHead(head);
+  const args =
+    sep === -1
+      ? []
+      : inner
+          .slice(sep + 1)
+          .split('|')
+          .map((arg) => arg.trim());
 
-  if (sep === -1) {
-    return { kind: 'placeholder', name: inner.trim(), args: [], raw };
-  }
-
-  const name = inner.slice(0, sep).trim();
-  const args = inner
-    .slice(sep + 1)
-    .split('|')
-    .map((arg) => arg.trim());
-
-  return { kind: 'placeholder', name, args, raw };
+  return { kind: 'placeholder', name, args, captureName, raw };
 }
 
 function parseCaptureRef(raw: string): Node {
-  return { kind: 'capture-ref', name: raw.slice(1, -1).trim(), raw };
+  return {
+    kind: 'capture-ref',
+    name: raw.slice(1, -1).trim().toLowerCase(),
+    raw,
+  };
 }
 
 export function parse(template: string): Node[] {
