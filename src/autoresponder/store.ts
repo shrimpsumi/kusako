@@ -93,6 +93,21 @@ export function editAutoresponder(
   return result.changes > 0;
 }
 
+export function setMatchMode(
+  guildId: string,
+  trigger: string,
+  mode: MatchMode,
+): boolean {
+  const result = db()
+    .prepare(
+      `UPDATE autoresponders SET match_mode = ?, updated_at = ?
+       WHERE guild_id = ? AND trigger_key = ?`,
+    )
+    .run(mode, Date.now(), guildId, key(trigger));
+
+  return result.changes > 0;
+}
+
 export function removeAutoresponder(guildId: string, trigger: string): boolean {
   const result = db()
     .prepare(

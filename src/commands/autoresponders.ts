@@ -13,6 +13,8 @@ import {
   removeAutoresponder,
   getAutoresponder,
   listAutoresponders,
+  setMatchMode,
+  type MatchMode,
 } from '../autoresponder/store.js';
 import { parse } from '../autoresponder/parser.js';
 import { validateTemplate } from '../autoresponder/validate.js';
@@ -68,6 +70,39 @@ export const autoresponders: SlashCommand = {
             .setDescription('the new response')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('matchmode')
+        .setDescription('change how a trigger matches messages')
+        .addStringOption((o) =>
+          o
+            .setName('trigger')
+            .setDescription('the trigger to change')
+            .setMaxLength(TRIGGER_MAX)
+            .setRequired(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName('mode')
+            .setDescription('how the trigger should match')
+            .setRequired(true)
+            .addChoices(
+              { name: 'exact (message equals the trigger)', value: 'exact' },
+              {
+                name: 'starts with (whole word at the start)',
+                value: 'startswith',
+              },
+              {
+                name: 'ends with (whole word at the end)',
+                value: 'endswith',
+              },
+              {
+                name: 'includes (anywhere in the message)',
+                value: 'includes',
+              },
+            ),
         ),
     )
     .addSubcommand((sub) =>
@@ -160,6 +195,21 @@ export const autoresponders: SlashCommand = {
       return;
     }
 
+    if (sub === 'matchmode') {
+      const trigger = interaction.options.getString('trigger', true);
+      const mode = interaction.options.getString('mode', true) as MatchMode;
+
+      const changed = setMatchMode(guildId, trigger, mode);
+
+      await interaction.reply({
+        content: changed
+          ? `${inlineCode(trigger)} now matches as ${inlineCode(mode)} c:`
+          : `no autoresponder for ${inlineCode(trigger)} exists yet. use ${inlineCode('/autoresponders add')} to make one.`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     if (sub === 'remove') {
       const trigger = interaction.options.getString('trigger', true);
       const removed = removeAutoresponder(guildId, trigger);
@@ -178,7 +228,7 @@ export const autoresponders: SlashCommand = {
 
       await interaction.reply({
         content: all.length
-          ? `**autoresponders (${all.length}):**\n${all.map((a) => `• ${inlineCode(a.trigger)}`).join('\n')}`
+          ? `**autoresponders (${all.length}):**\n${all.map((a) => `• ${inlineCode(a.trigger)}${a.matchMode === 'exact' ? '' : ` (${a.matchMode})`}`).join('\n')}`
           : 'no autoresponders set up yet. add one with /autoresponders add!',
         flags: MessageFlags.Ephemeral,
       });
@@ -191,7 +241,7 @@ export const autoresponders: SlashCommand = {
 
       await interaction.reply({
         content: found
-          ? `**${inlineCode(found.trigger)}** replies with:\n${codeBlock(found.response)}`
+          ? `**${inlineCode(found.trigger)}** (${found.matchMode}) replies with:\n${codeBlock(found.response)}`
           : `no autoresponder for ${inlineCode(trigger)} found.`,
         flags: MessageFlags.Ephemeral,
       });
