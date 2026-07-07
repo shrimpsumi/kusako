@@ -5,3 +5,9 @@ export interface RenderContext {
   guild: Guild;
   channel: GuildTextBasedChannel;
 }
+
+export interface EvalMeta {
+  guildId: string;
+  userId: string;
+  triggerKey: string;
+}
