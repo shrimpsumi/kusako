@@ -5,6 +5,7 @@ export type MatchMode = 'exact' | 'startswith' | 'endswith' | 'includes';
 export interface Autoresponder {
   guildId: string;
   trigger: string;
+  triggerKey: string;
   response: string;
   matchMode: MatchMode;
   createdAt: number;
@@ -14,6 +15,7 @@ export interface Autoresponder {
 interface Row {
   guild_id: string;
   trigger: string;
+  trigger_key: string;
   response: string;
   match_mode: MatchMode;
   created_at: number;
@@ -24,6 +26,7 @@ function toModel(row: Row): Autoresponder {
   return {
     guildId: row.guild_id,
     trigger: row.trigger,
+    triggerKey: row.trigger_key,
     response: row.response,
     matchMode: row.match_mode,
     createdAt: row.created_at,
