@@ -77,6 +77,28 @@ CREATE TABLE IF NOT EXISTS inventories (
     REFERENCES items (guild_id, name_key)
     ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS ar_cooldowns (
+  guild_id TEXT NOT NULL,
+  trigger_key TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, trigger_key, user_id),
+  FOREIGN KEY (guild_id, trigger_key)
+    REFERENCES autoresponders (guild_id, trigger_key)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS scheduled_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  send_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_messages_send_at
+  ON scheduled_messages (send_at);
 `;
 
 let instance: Database.Database | null = null;
