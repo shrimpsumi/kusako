@@ -18,8 +18,14 @@ export interface Segment {
   delaySeconds: number;
 }
 
+export interface MessageActions {
+  reactions: string[];
+  deleteTrigger: boolean;
+  dm: boolean;
+}
+
 export type EvalResult =
-  | { ok: true; segments: Segment[] }
+  | { ok: true; segments: Segment[]; actions: MessageActions }
   | { ok: false; message: string };
 
 export async function evaluate(
@@ -39,6 +45,11 @@ export async function evaluate(
   let current = '';
   let currentDelay = 0;
   let cooldownSeconds: number | null = null;
+  const actions: MessageActions = {
+    reactions: [],
+    deleteTrigger: false,
+    dm: false,
+  };
 
   const closeSegment = (nextDelay: number) => {
     segments.push({ content: current.trim(), delaySeconds: currentDelay });
@@ -99,9 +110,25 @@ export async function evaluate(
       continue;
     }
 
+    if (node.name === 'react') {
+      const emoji = (args[0] ?? '').trim();
+      if (emoji.length > 0) actions.reactions.push(emoji);
+      continue;
+    }
+
+    if (node.name === 'deletetrigger') {
+      actions.deleteTrigger = true;
+      continue;
+    }
+
+    if (node.name === 'dm') {
+      actions.dm = true;
+      continue;
+    }
+
     const guard = guards.get(node.name);
     if (guard) {
-      const result = guard(meta, args);
+      const result = guard(meta, args, ctx);
       if (!result.ok) return { ok: false, message: result.message };
       continue;
     }
@@ -148,5 +175,5 @@ export async function evaluate(
     }
   }
 
-  return { ok: true, segments };
+  return { ok: true, segments, actions };
 }

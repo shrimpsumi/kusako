@@ -3,6 +3,7 @@ import { generators, RANGE_FORMAT } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 
 const MAX_SEGMENTS = 3;
+const MAX_REACTIONS = 3;
 
 function checkDuration(
   arg: string | undefined,
@@ -44,6 +45,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   const bound = new Set<string>();
   let boundaries = 0;
   let cooldowns = 0;
+  let reactions = 0;
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
@@ -120,6 +122,44 @@ export function validateTemplate(nodes: Node[]): string[] {
       }
       if (node.args.length > 1) {
         checkAmount(node.args[1], 'requireitem', false, errors);
+      }
+      continue;
+    }
+
+    if (node.name === 'requirechannel') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{requirechannel} needs a channel, like {requirechannel:#bot-spam} or a channel id',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'requirerole') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{requirerole} needs a role, like {requirerole:@fisher} or a role id',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'react') {
+      reactions += 1;
+      if (reactions === MAX_REACTIONS + 1) {
+        errors.push(`max ${MAX_REACTIONS} {react} tags per autoresponder !`);
+      }
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push('{react} needs an emoji, like {react:🔥}');
+      }
+      continue;
+    }
+
+    if (node.name === 'user.itemcount') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{user.itemcount} needs an item name, like {user.itemcount:fish}',
+        );
       }
       continue;
     }

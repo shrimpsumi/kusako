@@ -43,19 +43,63 @@ export function registerMessageCreate(client: SakoClient): void {
           continue;
         }
 
-        let offset = 0;
-        for (const segment of result.segments) {
-          offset += segment.delaySeconds;
-          const content = segment.content.slice(0, 2000);
-          if (content.length === 0) continue;
+        const { actions } = result;
 
-          if (offset === 0) {
-            await message.channel.send({
-              content,
-              allowedMentions: { parse: ['users', 'roles'] },
-            });
-          } else {
-            scheduleMessage(message.channelId, content, offset);
+        const destination = actions.dm
+          ? await message.author.createDM().catch(() => null)
+          : message.channel;
+
+        if (!destination) {
+          await message.reply({
+            content: "i couldn't dm you ! check your privacy settings c:",
+            allowedMentions: { parse: [] },
+          });
+        } else {
+          let offset = 0;
+          for (const segment of result.segments) {
+            offset += segment.delaySeconds;
+            const content = segment.content.slice(0, 2000);
+            if (content.length === 0) continue;
+
+            try {
+              if (offset === 0) {
+                await destination.send({
+                  content,
+                  allowedMentions: { parse: ['users', 'roles'] },
+                });
+              } else {
+                scheduleMessage(destination.id, content, offset);
+              }
+            } catch (err) {
+              if (!actions.dm) throw err;
+              await message.reply({
+                content: "i couldn't dm you ! check your privacy settings c:",
+                allowedMentions: { parse: [] },
+              });
+              break;
+            }
+          }
+        }
+
+        for (const emoji of actions.reactions) {
+          try {
+            await message.react(emoji);
+          } catch (err) {
+            logger.warn(
+              { err, emoji, trigger: responder.trigger },
+              'react failed',
+            );
+          }
+        }
+
+        if (actions.deleteTrigger) {
+          try {
+            await message.delete();
+          } catch (err) {
+            logger.warn(
+              { err, trigger: responder.trigger },
+              'deletetrigger failed',
+            );
           }
         }
       } catch (err) {
