@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  MessageFlags,
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, modifyBalance, setBalance } from '../economy.js';
@@ -63,7 +59,6 @@ export const modifybalance: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'balances only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -88,7 +83,6 @@ export const modifybalance: SlashCommand = {
     if (!result.ok) {
       await interaction.reply({
         content: `${user.displayName} only has ${currency.emoji} ${result.balance.toLocaleString('en-US')} ${currency.name}, can't remove that much !`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

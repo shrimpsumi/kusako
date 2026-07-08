@@ -1,7 +1,6 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  MessageFlags,
   inlineCode,
   type AutocompleteInteraction,
 } from 'discord.js';
@@ -132,7 +131,6 @@ export const items: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'items only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -149,7 +147,6 @@ export const items: SlashCommand = {
       if (!created) {
         await interaction.reply({
           content: `an item called ${inlineCode(name)} already exists (or the name is empty). use ${inlineCode('/items edit')} to change it !`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -173,7 +170,6 @@ export const items: SlashCommand = {
         await interaction.reply({
           content:
             'give me something to change !! a description or an emoji c:',
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -186,7 +182,6 @@ export const items: SlashCommand = {
       if (!edited) {
         await interaction.reply({
           content: `there's no item called ${inlineCode(name)} !`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -209,7 +204,6 @@ export const items: SlashCommand = {
       if (!deleted) {
         await interaction.reply({
           content: `there's no item called ${inlineCode(name)} !`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -246,7 +240,6 @@ export const items: SlashCommand = {
       if (!item) {
         await interaction.reply({
           content: `there's no item called ${inlineCode(name)} !`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }

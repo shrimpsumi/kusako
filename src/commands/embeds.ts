@@ -340,7 +340,6 @@ export async function handleEmbedComponents(
   if (!record) {
     await interaction.reply({
       content: "this embed doesn't exist anymore...",
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -366,7 +365,6 @@ export async function handleEmbedComponents(
         await interaction.reply({
           content:
             "that doesn't look like a hex color ! try something like #faf0e7",
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -377,7 +375,6 @@ export async function handleEmbedComponents(
     if (!parsed.ok) {
       await interaction.reply({
         content: `hmm, that json has some problems !!\n${parsed.errors.map((e) => `• ${e}`).join('\n')}`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -393,7 +390,6 @@ export async function handleEmbedComponents(
   if (!validation.ok) {
     await interaction.reply({
       content: `hmm, that embed has some problems !!\n${validation.errors.map((e) => `• ${e}`).join('\n')}`,
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -406,7 +402,6 @@ export async function handleEmbedComponents(
   } else {
     await interaction.reply({
       content: `updated the ${inlineCode(updated.name)} embed c:`,
-      flags: MessageFlags.Ephemeral,
     });
   }
 }
@@ -516,7 +511,6 @@ export const embeds: SlashCommand = {
     if (!interaction.inGuild()) {
       await interaction.reply({
         content: 'embeds only work inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -531,7 +525,6 @@ export const embeds: SlashCommand = {
       if (!created) {
         await interaction.reply({
           content: `an embed named ${inlineCode(name)} already exists. use ${inlineCode('/embeds edit')} to change it.`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -539,7 +532,6 @@ export const embeds: SlashCommand = {
       const record = getEmbed(guildId, name)!;
       await interaction.reply({
         ...panelPayload(record),
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -551,14 +543,12 @@ export const embeds: SlashCommand = {
       if (!record) {
         await interaction.reply({
           content: `no embed named ${inlineCode(name)} exists yet. use ${inlineCode('/embeds add')} to make one.`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
 
       await interaction.reply({
         ...panelPayload(record),
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -572,7 +562,6 @@ export const embeds: SlashCommand = {
       if (!parsed.ok) {
         await interaction.reply({
           content: `hmm, that json has some problems !!\n${parsed.errors.map((e) => `• ${e}`).join('\n')}`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -583,7 +572,6 @@ export const embeds: SlashCommand = {
       await interaction.reply({
         ...panelPayload(record),
         content: `${outcome === 'created' ? 'imported' : 'replaced'} the ${inlineCode(record.name)} embed c: keep tweaking below !`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -595,7 +583,6 @@ export const embeds: SlashCommand = {
         content: all.length
           ? `**embeds (${all.length}):**\n${all.map((record) => `• ${inlineCode(record.name)}`).join('\n')}`
           : 'no embeds saved yet. make one with /embeds add !',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -607,7 +594,6 @@ export const embeds: SlashCommand = {
       if (!record) {
         await interaction.reply({
           content: `no embed named ${inlineCode(name)} found.`,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -619,7 +605,6 @@ export const embeds: SlashCommand = {
             ? `-# ${hidden.join(', ')} hidden in preview — placeholder urls resolve when it sends !`
             : undefined,
         embeds: [embed],
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -632,7 +617,6 @@ export const embeds: SlashCommand = {
         content: removed
           ? `removed the ${inlineCode(name)} embed.`
           : `no embed named ${inlineCode(name)} to remove.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

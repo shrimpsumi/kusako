@@ -1,7 +1,6 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  MessageFlags,
   inlineCode,
 } from 'discord.js';
 
@@ -93,7 +92,6 @@ export const modifyinventory: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'inventories only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -108,7 +106,6 @@ export const modifyinventory: SlashCommand = {
     if (!item) {
       await interaction.reply({
         content: `there's no item called ${inlineCode(itemName)} !`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -126,7 +123,6 @@ export const modifyinventory: SlashCommand = {
     if (!result.ok) {
       await interaction.reply({
         content: `${user.displayName} only has ${result.quantity.toLocaleString('en-US')} ${item.emoji ?? '📦'} ${item.name}, can't remove that many !`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getBalance, getCurrency } from '../economy.js';
@@ -19,7 +19,6 @@ export const balance: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'balances only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

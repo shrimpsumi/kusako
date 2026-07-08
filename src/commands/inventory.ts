@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getInventory } from '../items.js';
@@ -19,7 +19,6 @@ export const inventory: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'inventories only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

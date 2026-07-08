@@ -1,7 +1,6 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  MessageFlags,
   codeBlock,
   inlineCode,
 } from 'discord.js';
@@ -139,7 +138,6 @@ export const autoresponders: SlashCommand = {
     if (!interaction.inGuild()) {
       await interaction.reply({
         content: 'autoresponders only work inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -155,7 +153,6 @@ export const autoresponders: SlashCommand = {
       if (issues) {
         await interaction.reply({
           content: issues,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -166,7 +163,6 @@ export const autoresponders: SlashCommand = {
         content: created
           ? `added an autoresponder for ${inlineCode(trigger)} c:`
           : `a responder for ${inlineCode(trigger)} already exists. use ${inlineCode('/autoresponders edit')} to change it.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -179,7 +175,6 @@ export const autoresponders: SlashCommand = {
       if (issues) {
         await interaction.reply({
           content: issues,
-          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -190,7 +185,6 @@ export const autoresponders: SlashCommand = {
         content: edited
           ? `updated the autoresponder for ${inlineCode(trigger)} c:`
           : `no autoresponder for ${inlineCode(trigger)} exists yet. use ${inlineCode('/autoresponders add')} to make one.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -205,7 +199,6 @@ export const autoresponders: SlashCommand = {
         content: changed
           ? `${inlineCode(trigger)} now matches as ${inlineCode(mode)} c:`
           : `no autoresponder for ${inlineCode(trigger)} exists yet. use ${inlineCode('/autoresponders add')} to make one.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -218,7 +211,6 @@ export const autoresponders: SlashCommand = {
         content: removed
           ? `removed the autoresponder for ${inlineCode(trigger)}.`
           : `no autoresponder for ${inlineCode(trigger)} to remove.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -230,7 +222,6 @@ export const autoresponders: SlashCommand = {
         content: all.length
           ? `**autoresponders (${all.length}):**\n${all.map((a) => `• ${inlineCode(a.trigger)}${a.matchMode === 'exact' ? '' : ` (${a.matchMode})`}`).join('\n')}`
           : 'no autoresponders set up yet. add one with /autoresponders add!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -243,7 +234,6 @@ export const autoresponders: SlashCommand = {
         content: found
           ? `**${inlineCode(found.trigger)}** (${found.matchMode}) replies with:\n${codeBlock(found.response)}`
           : `no autoresponder for ${inlineCode(trigger)} found.`,
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }

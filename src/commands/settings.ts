@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  MessageFlags,
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, setCurrency } from '../economy.js';
@@ -45,7 +41,6 @@ export const settings: SlashCommand = {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: 'settings only exist inside a server !!',
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
