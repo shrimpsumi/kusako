@@ -1,0 +1,644 @@
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  inlineCode,
+  type APIEmbed,
+  type AutocompleteInteraction,
+  type ButtonInteraction,
+  type ModalSubmitInteraction,
+} from 'discord.js';
+
+import type { SlashCommand } from '../client.js';
+import {
+  getEmbed,
+  listEmbeds,
+  createEmbed,
+  updateEmbed,
+  upsertEmbed,
+  deleteEmbed,
+  validateEmbedData,
+  parseEmbedJson,
+  parseColor,
+  isRenderable,
+  EMBED_LIMITS,
+  URLISH,
+  type EmbedData,
+  type EmbedRecord,
+} from '../embeds.js';
+import { colors } from '../style.js';
+
+const NAME_MAX = 50;
+const JSON_MAX = 6000;
+const MODAL_INPUT_MAX = 4000;
+
+interface FieldSpec {
+  id: string;
+  label: string;
+  style: TextInputStyle;
+  max: number;
+  read(data: EmbedData): string | undefined;
+  write(data: EmbedData, value: string | undefined): void;
+}
+
+const sections: Record<string, { label: string; fields: FieldSpec[] }> = {
+  text: {
+    label: 'text',
+    fields: [
+      {
+        id: 'title',
+        label: 'title',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.title,
+        read: (data) => data.title,
+        write: (data, value) => {
+          if (value) data.title = value;
+          else delete data.title;
+        },
+      },
+      {
+        id: 'description',
+        label: 'description',
+        style: TextInputStyle.Paragraph,
+        max: MODAL_INPUT_MAX,
+        read: (data) => data.description,
+        write: (data, value) => {
+          if (value) data.description = value;
+          else delete data.description;
+        },
+      },
+      {
+        id: 'url',
+        label: 'title link url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.url,
+        write: (data, value) => {
+          if (value) data.url = value;
+          else delete data.url;
+        },
+      },
+    ],
+  },
+  author: {
+    label: 'author',
+    fields: [
+      {
+        id: 'name',
+        label: 'author name',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.authorName,
+        read: (data) => data.author?.name,
+        write: (data, value) => {
+          if (value) data.author = { ...data.author, name: value };
+          else delete data.author;
+        },
+      },
+      {
+        id: 'icon',
+        label: 'author icon url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.author?.icon_url,
+        write: (data, value) => {
+          if (!data.author) return;
+          if (value) data.author.icon_url = value;
+          else delete data.author.icon_url;
+        },
+      },
+      {
+        id: 'link',
+        label: 'author link url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.author?.url,
+        write: (data, value) => {
+          if (!data.author) return;
+          if (value) data.author.url = value;
+          else delete data.author.url;
+        },
+      },
+    ],
+  },
+  footer: {
+    label: 'footer',
+    fields: [
+      {
+        id: 'text',
+        label: 'footer text',
+        style: TextInputStyle.Paragraph,
+        max: EMBED_LIMITS.footerText,
+        read: (data) => data.footer?.text,
+        write: (data, value) => {
+          if (value) data.footer = { ...data.footer, text: value };
+          else delete data.footer;
+        },
+      },
+      {
+        id: 'icon',
+        label: 'footer icon url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.footer?.icon_url,
+        write: (data, value) => {
+          if (!data.footer) return;
+          if (value) data.footer.icon_url = value;
+          else delete data.footer.icon_url;
+        },
+      },
+    ],
+  },
+  images: {
+    label: 'images',
+    fields: [
+      {
+        id: 'image',
+        label: 'big image url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.image?.url,
+        write: (data, value) => {
+          if (value) data.image = { url: value };
+          else delete data.image;
+        },
+      },
+      {
+        id: 'thumbnail',
+        label: 'thumbnail url',
+        style: TextInputStyle.Short,
+        max: EMBED_LIMITS.url,
+        read: (data) => data.thumbnail?.url,
+        write: (data, value) => {
+          if (value) data.thumbnail = { url: value };
+          else delete data.thumbnail;
+        },
+      },
+    ],
+  },
+};
+
+function previewOf(data: EmbedData): { embed: APIEmbed; hidden: string[] } {
+  const hidden: string[] = [];
+  const embed = structuredClone(data) as APIEmbed;
+
+  const check = (
+    label: string,
+    value: string | undefined,
+    remove: () => void,
+  ) => {
+    if (value !== undefined && !URLISH.test(value)) {
+      hidden.push(label);
+      remove();
+    }
+  };
+
+  check('title link', embed.url, () => delete embed.url);
+  check(
+    'author icon',
+    embed.author?.icon_url,
+    () => delete embed.author?.icon_url,
+  );
+  check('author link', embed.author?.url, () => delete embed.author?.url);
+  check(
+    'footer icon',
+    embed.footer?.icon_url,
+    () => delete embed.footer?.icon_url,
+  );
+  check('image', embed.image?.url, () => delete embed.image);
+  check('thumbnail', embed.thumbnail?.url, () => delete embed.thumbnail);
+
+  if (!isRenderable(embed as EmbedData)) {
+    return {
+      embed: {
+        description:
+          '( this embed is empty ! use the buttons below to build it c: )',
+        color: colors.cream,
+      },
+      hidden,
+    };
+  }
+
+  return { embed, hidden };
+}
+
+function buttonRows(nameKey: string): ActionRowBuilder<ButtonBuilder>[] {
+  const section = (id: string, label: string) =>
+    new ButtonBuilder()
+      .setCustomId(`embeds:${id}:${nameKey}`)
+      .setLabel(label)
+      .setStyle(ButtonStyle.Secondary);
+
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      section('text', 'text'),
+      section('author', 'author'),
+      section('footer', 'footer'),
+      section('images', 'images'),
+      section('color', 'color'),
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`embeds:import:${nameKey}`)
+        .setLabel('import json')
+        .setStyle(ButtonStyle.Primary),
+    ),
+  ];
+}
+
+function panelPayload(record: EmbedRecord) {
+  const { embed, hidden } = previewOf(record.data);
+  const note =
+    hidden.length > 0
+      ? `\n-# ${hidden.join(', ')} hidden in preview — placeholder urls resolve when it sends !`
+      : '';
+
+  return {
+    content: `✦ editing the ${inlineCode(record.name)} embed ! the preview updates as you go${note}`,
+    embeds: [embed],
+    components: buttonRows(record.nameKey),
+  };
+}
+
+function sectionModal(sectionId: string, record: EmbedRecord): ModalBuilder {
+  const modal = new ModalBuilder()
+    .setCustomId(`embeds:${sectionId}:${record.nameKey}`)
+    .setTitle(`edit ${sectionId}`);
+
+  if (sectionId === 'color') {
+    const input = new TextInputBuilder()
+      .setCustomId('color')
+      .setLabel('hex color (blank to clear)')
+      .setStyle(TextInputStyle.Short)
+      .setMaxLength(10)
+      .setRequired(false);
+    if (record.data.color !== undefined) {
+      input.setValue(`#${record.data.color.toString(16).padStart(6, '0')}`);
+    }
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(input),
+    );
+    return modal;
+  }
+
+  if (sectionId === 'import') {
+    const input = new TextInputBuilder()
+      .setCustomId('json')
+      .setLabel('embed json (replaces everything !)')
+      .setStyle(TextInputStyle.Paragraph)
+      .setMaxLength(MODAL_INPUT_MAX)
+      .setRequired(true);
+    const current = JSON.stringify(record.data);
+    if (current !== '{}' && current.length <= MODAL_INPUT_MAX) {
+      input.setValue(current);
+    }
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(input),
+    );
+    return modal;
+  }
+
+  for (const field of sections[sectionId]!.fields) {
+    const input = new TextInputBuilder()
+      .setCustomId(field.id)
+      .setLabel(field.label)
+      .setStyle(field.style)
+      .setMaxLength(field.max)
+      .setRequired(false);
+    const value = field.read(record.data);
+    if (value) input.setValue(value.slice(0, field.max));
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(input),
+    );
+  }
+  return modal;
+}
+
+export async function handleEmbedComponents(
+  interaction: ButtonInteraction | ModalSubmitInteraction,
+): Promise<void> {
+  const parts = interaction.customId.split(':');
+  const sectionId = parts[1] ?? '';
+  const nameKey = parts.slice(2).join(':');
+
+  if (!interaction.inCachedGuild()) return;
+
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
+    await interaction.reply({
+      content: 'you need **manage server** to edit embeds !',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const record = getEmbed(interaction.guildId, nameKey);
+  if (!record) {
+    await interaction.reply({
+      content: "this embed doesn't exist anymore...",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const isKnownSection =
+    sectionId === 'color' || sectionId === 'import' || sectionId in sections;
+  if (!isKnownSection) return;
+
+  if (interaction.isButton()) {
+    await interaction.showModal(sectionModal(sectionId, record));
+    return;
+  }
+
+  let data = structuredClone(record.data);
+
+  if (sectionId === 'color') {
+    const raw = interaction.fields.getTextInputValue('color').trim();
+    if (raw.length === 0) {
+      delete data.color;
+    } else {
+      const color = parseColor(raw);
+      if (color === null) {
+        await interaction.reply({
+          content:
+            "that doesn't look like a hex color ! try something like #faf0e7",
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+      data.color = color;
+    }
+  } else if (sectionId === 'import') {
+    const parsed = parseEmbedJson(interaction.fields.getTextInputValue('json'));
+    if (!parsed.ok) {
+      await interaction.reply({
+        content: `hmm, that json has some problems !!\n${parsed.errors.map((e) => `• ${e}`).join('\n')}`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+    data = parsed.data;
+  } else {
+    for (const field of sections[sectionId]!.fields) {
+      const value = interaction.fields.getTextInputValue(field.id).trim();
+      field.write(data, value.length > 0 ? value : undefined);
+    }
+  }
+
+  const validation = validateEmbedData(data);
+  if (!validation.ok) {
+    await interaction.reply({
+      content: `hmm, that embed has some problems !!\n${validation.errors.map((e) => `• ${e}`).join('\n')}`,
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  updateEmbed(interaction.guildId, record.name, validation.data);
+  const updated = getEmbed(interaction.guildId, record.name)!;
+
+  if (interaction.isFromMessage()) {
+    await interaction.update(panelPayload(updated));
+  } else {
+    await interaction.reply({
+      content: `updated the ${inlineCode(updated.name)} embed c:`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+}
+
+export async function respondWithEmbedNames(
+  interaction: AutocompleteInteraction,
+): Promise<void> {
+  if (!interaction.inCachedGuild()) {
+    await interaction.respond([]);
+    return;
+  }
+
+  const focused = interaction.options.getFocused().toLowerCase();
+  const choices = listEmbeds(interaction.guildId)
+    .filter((record) => record.nameKey.includes(focused))
+    .slice(0, 25)
+    .map((record) => ({ name: record.name, value: record.name }));
+
+  await interaction.respond(choices);
+}
+
+export const embeds: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('embeds')
+    .setDescription("manage this server's saved embeds")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addSubcommand((sub) =>
+      sub
+        .setName('add')
+        .setDescription('create a new embed and open the builder')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setDescription('the embed name (also its id, case insensitive)')
+            .setMaxLength(NAME_MAX)
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('edit')
+        .setDescription('open the builder for an existing embed')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setDescription('the embed to edit')
+            .setMaxLength(NAME_MAX)
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('import')
+        .setDescription('create or replace an embed from json')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setDescription('the embed name to import into')
+            .setMaxLength(NAME_MAX)
+            .setRequired(true)
+            .setAutocomplete(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName('json')
+            .setDescription(
+              'embed json (bare embed or {"embeds":[...]} both work)',
+            )
+            .setMaxLength(JSON_MAX)
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('list')
+        .setDescription('list every saved embed in this server'),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('show')
+        .setDescription('preview a saved embed')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setDescription('the embed to show')
+            .setMaxLength(NAME_MAX)
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('remove')
+        .setDescription('delete a saved embed')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setDescription('the embed to delete')
+            .setMaxLength(NAME_MAX)
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    ) as SlashCommandBuilder,
+
+  async execute(interaction) {
+    if (!interaction.inGuild()) {
+      await interaction.reply({
+        content: 'embeds only work inside a server !!',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const guildId = interaction.guildId;
+    const sub = interaction.options.getSubcommand();
+
+    if (sub === 'add') {
+      const name = interaction.options.getString('name', true);
+      const created = createEmbed(guildId, name, {});
+
+      if (!created) {
+        await interaction.reply({
+          content: `an embed named ${inlineCode(name)} already exists. use ${inlineCode('/embeds edit')} to change it.`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      const record = getEmbed(guildId, name)!;
+      await interaction.reply({
+        ...panelPayload(record),
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (sub === 'edit') {
+      const name = interaction.options.getString('name', true);
+      const record = getEmbed(guildId, name);
+
+      if (!record) {
+        await interaction.reply({
+          content: `no embed named ${inlineCode(name)} exists yet. use ${inlineCode('/embeds add')} to make one.`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      await interaction.reply({
+        ...panelPayload(record),
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (sub === 'import') {
+      const name = interaction.options.getString('name', true);
+      const parsed = parseEmbedJson(
+        interaction.options.getString('json', true),
+      );
+
+      if (!parsed.ok) {
+        await interaction.reply({
+          content: `hmm, that json has some problems !!\n${parsed.errors.map((e) => `• ${e}`).join('\n')}`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      const outcome = upsertEmbed(guildId, name, parsed.data);
+      const record = getEmbed(guildId, name)!;
+
+      await interaction.reply({
+        ...panelPayload(record),
+        content: `${outcome === 'created' ? 'imported' : 'replaced'} the ${inlineCode(record.name)} embed c: keep tweaking below !`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (sub === 'list') {
+      const all = listEmbeds(guildId);
+
+      await interaction.reply({
+        content: all.length
+          ? `**embeds (${all.length}):**\n${all.map((record) => `• ${inlineCode(record.name)}`).join('\n')}`
+          : 'no embeds saved yet. make one with /embeds add !',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (sub === 'show') {
+      const name = interaction.options.getString('name', true);
+      const record = getEmbed(guildId, name);
+
+      if (!record) {
+        await interaction.reply({
+          content: `no embed named ${inlineCode(name)} found.`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      const { embed, hidden } = previewOf(record.data);
+      await interaction.reply({
+        content:
+          hidden.length > 0
+            ? `-# ${hidden.join(', ')} hidden in preview — placeholder urls resolve when it sends !`
+            : undefined,
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (sub === 'remove') {
+      const name = interaction.options.getString('name', true);
+      const removed = deleteEmbed(guildId, name);
+
+      await interaction.reply({
+        content: removed
+          ? `removed the ${inlineCode(name)} embed.`
+          : `no embed named ${inlineCode(name)} to remove.`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+  },
+
+  async autocomplete(interaction) {
+    await respondWithEmbedNames(interaction);
+  },
+};

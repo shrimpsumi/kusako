@@ -4,6 +4,7 @@ import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
+const MAX_EMBEDS = 3;
 
 function checkDuration(
   arg: string | undefined,
@@ -46,6 +47,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   let boundaries = 0;
   let cooldowns = 0;
   let reactions = 0;
+  let embedTags = 0;
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
@@ -151,6 +153,14 @@ export function validateTemplate(nodes: Node[]): string[] {
       }
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push('{react} needs an emoji, like {react:🔥}');
+      }
+      continue;
+    }
+
+    if (node.name === 'embed') {
+      embedTags += 1;
+      if (embedTags === MAX_EMBEDS + 1) {
+        errors.push(`max ${MAX_EMBEDS} {embed} tags per autoresponder !`);
       }
       continue;
     }

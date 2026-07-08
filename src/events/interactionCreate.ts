@@ -1,10 +1,23 @@
 import { Events, MessageFlags } from 'discord.js';
 
 import type { SakoClient } from '../client.js';
+import { handleEmbedComponents } from '../commands/embeds.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
   client.on(Events.InteractionCreate, async (interaction) => {
+    if (
+      (interaction.isButton() || interaction.isModalSubmit()) &&
+      interaction.customId.startsWith('embeds:')
+    ) {
+      try {
+        await handleEmbedComponents(interaction);
+      } catch (err) {
+        logger.error({ err, id: interaction.customId }, 'embed panel failed');
+      }
+      return;
+    }
+
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
       if (!command?.autocomplete) return;

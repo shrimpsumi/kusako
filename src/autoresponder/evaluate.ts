@@ -1,5 +1,16 @@
+import type { APIEmbed } from 'discord.js';
+
 import { db } from '../db.js';
+import {
+  getEmbed,
+  isRenderable,
+  EMBED_LIMITS,
+  URLISH,
+  type EmbedData,
+} from '../embeds.js';
+import { colors } from '../style.js';
 import type { Node } from './ast.js';
+import { parse } from './parser.js';
 import type { RenderContext, EvalMeta } from './context.js';
 import { generators } from './generators.js';
 import { placeholders } from './placeholders.js';
@@ -16,6 +27,7 @@ import {
 export interface Segment {
   content: string;
   delaySeconds: number;
+  embeds: APIEmbed[];
 }
 
 export interface MessageActions {
@@ -27,6 +39,106 @@ export interface MessageActions {
 export type EvalResult =
   | { ok: true; segments: Segment[]; actions: MessageActions }
   | { ok: false; message: string };
+
+async function renderInline(
+  template: string,
+  ctx: RenderContext,
+  captures: Map<string, string>,
+): Promise<string> {
+  let out = '';
+  for (const node of parse(template)) {
+    if (node.kind === 'text') {
+      out += node.value;
+      continue;
+    }
+    if (node.kind === 'capture-ref') {
+      out += captures.get(node.name) ?? node.raw;
+      continue;
+    }
+
+    const resolver = placeholders.get(node.name);
+    if (!resolver) {
+      out += node.raw;
+      continue;
+    }
+    try {
+      out += await resolver(ctx, interpolateArgs(node.args, captures));
+    } catch {
+      out += node.raw;
+    }
+  }
+  return out;
+}
+
+async function renderEmbed(
+  data: EmbedData,
+  ctx: RenderContext,
+  captures: Map<string, string>,
+): Promise<APIEmbed> {
+  const render = async (value: string | undefined, max: number) => {
+    if (value === undefined) return undefined;
+    const rendered = (await renderInline(value, ctx, captures))
+      .trim()
+      .slice(0, max);
+    return rendered.length > 0 ? rendered : undefined;
+  };
+  const renderUrl = async (value: string | undefined) => {
+    const rendered = await render(value, EMBED_LIMITS.url);
+    return rendered !== undefined && URLISH.test(rendered)
+      ? rendered
+      : undefined;
+  };
+
+  const out: APIEmbed = {};
+
+  const title = await render(data.title, EMBED_LIMITS.title);
+  if (title) out.title = title;
+  const description = await render(data.description, EMBED_LIMITS.description);
+  if (description) out.description = description;
+  const url = await renderUrl(data.url);
+  if (url) out.url = url;
+  if (data.color !== undefined) out.color = data.color;
+  if (data.timestamp) out.timestamp = data.timestamp;
+
+  if (data.author) {
+    const name = await render(data.author.name, EMBED_LIMITS.authorName);
+    if (name) {
+      out.author = { name };
+      const icon = await renderUrl(data.author.icon_url);
+      if (icon) out.author.icon_url = icon;
+      const link = await renderUrl(data.author.url);
+      if (link) out.author.url = link;
+    }
+  }
+
+  if (data.footer) {
+    const text = await render(data.footer.text, EMBED_LIMITS.footerText);
+    if (text) {
+      out.footer = { text };
+      const icon = await renderUrl(data.footer.icon_url);
+      if (icon) out.footer.icon_url = icon;
+    }
+  }
+
+  const image = await renderUrl(data.image?.url);
+  if (image) out.image = { url: image };
+  const thumbnail = await renderUrl(data.thumbnail?.url);
+  if (thumbnail) out.thumbnail = { url: thumbnail };
+
+  if (data.fields && data.fields.length > 0) {
+    const fields = [];
+    for (const field of data.fields.slice(0, EMBED_LIMITS.fields)) {
+      const name = await render(field.name, EMBED_LIMITS.fieldName);
+      const value = await render(field.value, EMBED_LIMITS.fieldValue);
+      if (name && value) {
+        fields.push({ name, value, inline: field.inline === true });
+      }
+    }
+    if (fields.length > 0) out.fields = fields;
+  }
+
+  return out;
+}
 
 export async function evaluate(
   nodes: Node[],
@@ -51,10 +163,26 @@ export async function evaluate(
     dm: false,
   };
 
+  let currentEmbeds: APIEmbed[] = [];
+  let wrapCurrent = false;
+
   const closeSegment = (nextDelay: number) => {
-    segments.push({ content: current.trim(), delaySeconds: currentDelay });
+    let content = current.trim();
+    const embeds = currentEmbeds;
+
+    if (wrapCurrent && content.length > 0) {
+      embeds.unshift({
+        description: content.slice(0, EMBED_LIMITS.description),
+        color: colors.cream,
+      });
+      content = '';
+    }
+
+    segments.push({ content, delaySeconds: currentDelay, embeds });
     current = '';
     currentDelay = nextDelay;
+    currentEmbeds = [];
+    wrapCurrent = false;
   };
 
   for (const node of nodes) {
@@ -107,6 +235,30 @@ export async function evaluate(
       }
 
       cooldownSeconds = seconds;
+      continue;
+    }
+
+    if (node.name === 'embed') {
+      const name = (args[0] ?? '').trim();
+
+      if (name.length === 0) {
+        wrapCurrent = true;
+        continue;
+      }
+
+      const record = getEmbed(meta.guildId, name);
+      if (!record || !isRenderable(record.data)) {
+        current += node.raw;
+        continue;
+      }
+
+      const rendered = await renderEmbed(record.data, ctx, captures);
+      if (Object.keys(rendered).length === 0) {
+        current += node.raw;
+        continue;
+      }
+
+      currentEmbeds.push(rendered);
       continue;
     }
 

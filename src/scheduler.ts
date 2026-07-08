@@ -1,4 +1,4 @@
-import type { Client } from 'discord.js';
+import type { APIEmbed, Client } from 'discord.js';
 
 import { db } from './db.js';
 import { logger } from './logger.js';
@@ -8,6 +8,7 @@ interface ScheduledRow {
   channel_id: string;
   content: string;
   send_at: number;
+  embeds_json: string | null;
 }
 
 const SWEEP_MS = 2000;
@@ -18,14 +19,21 @@ export function scheduleMessage(
   channelId: string,
   content: string,
   delaySeconds: number,
+  embeds: APIEmbed[] = [],
 ): void {
   const now = Date.now();
   db()
     .prepare(
-      `INSERT INTO scheduled_messages (channel_id, content, send_at, created_at)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO scheduled_messages (channel_id, content, send_at, created_at, embeds_json)
+       VALUES (?, ?, ?, ?, ?)`,
     )
-    .run(channelId, content, now + delaySeconds * 1000, now);
+    .run(
+      channelId,
+      content,
+      now + delaySeconds * 1000,
+      now,
+      embeds.length > 0 ? JSON.stringify(embeds) : null,
+    );
 }
 
 export function startScheduler(client: Client): void {
@@ -60,10 +68,21 @@ async function sweep(client: Client): Promise<void> {
     db().prepare('DELETE FROM scheduled_messages WHERE id = ?').run(row.id);
 
     try {
+      let embeds: APIEmbed[] = [];
+      if (row.embeds_json) {
+        try {
+          embeds = JSON.parse(row.embeds_json) as APIEmbed[];
+        } catch {
+          embeds = [];
+        }
+      }
+      if (row.content.length === 0 && embeds.length === 0) continue;
+
       const channel = await client.channels.fetch(row.channel_id);
       if (channel?.isSendable()) {
         await channel.send({
-          content: row.content,
+          content: row.content.length > 0 ? row.content : undefined,
+          embeds,
           allowedMentions: { parse: ['users', 'roles'] },
         });
       }

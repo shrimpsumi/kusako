@@ -97,11 +97,31 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS embeds (
+  guild_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  name_key TEXT NOT NULL,
+  json TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, name_key)
+);
+
 CREATE INDEX IF NOT EXISTS idx_scheduled_messages_send_at
   ON scheduled_messages (send_at);
 `;
 
 let instance: Database.Database | null = null;
+
+function migrate(database: Database.Database): void {
+  const columns = database
+    .prepare('PRAGMA table_info(scheduled_messages)')
+    .all() as Array<{ name: string }>;
+
+  if (!columns.some((column) => column.name === 'embeds_json')) {
+    database.exec('ALTER TABLE scheduled_messages ADD COLUMN embeds_json TEXT');
+  }
+}
 
 export function db(): Database.Database {
   if (instance) return instance;
@@ -111,6 +131,7 @@ export function db(): Database.Database {
   instance.pragma('journal_mode = WAL');
   instance.pragma('foreign_keys = ON');
   instance.exec(SCHEMA);
+  migrate(instance);
 
   logger.debug({ path: DB_PATH }, 'sqlite opened');
   return instance;

@@ -59,16 +59,22 @@ export function registerMessageCreate(client: SakoClient): void {
           for (const segment of result.segments) {
             offset += segment.delaySeconds;
             const content = segment.content.slice(0, 2000);
-            if (content.length === 0) continue;
+            if (content.length === 0 && segment.embeds.length === 0) continue;
 
             try {
               if (offset === 0) {
                 await destination.send({
-                  content,
+                  content: content.length > 0 ? content : undefined,
+                  embeds: segment.embeds,
                   allowedMentions: { parse: ['users', 'roles'] },
                 });
               } else {
-                scheduleMessage(destination.id, content, offset);
+                scheduleMessage(
+                  destination.id,
+                  content,
+                  offset,
+                  segment.embeds,
+                );
               }
             } catch (err) {
               if (!actions.dm) throw err;
