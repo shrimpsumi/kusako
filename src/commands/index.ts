@@ -9,6 +9,7 @@ import { items } from './items.js';
 import { inventory } from './inventory.js';
 import { modifyinventory } from './modifyinventory.js';
 import { embeds } from './embeds.js';
+import { events } from './events.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -20,4 +21,5 @@ export const commands: SlashCommand[] = [
   inventory,
   modifyinventory,
   embeds,
+  events,
 ];

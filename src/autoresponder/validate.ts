@@ -1,4 +1,5 @@
 import type { Node } from './ast.js';
+import { parse } from './parser.js';
 import { generators, RANGE_FORMAT } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 
@@ -39,6 +40,13 @@ function checkAmount(
       `{${tag}} needs a ${allowNegative ? 'non-zero' : 'positive'} whole number (or a [capture])`,
     );
   }
+}
+
+export function templateIssues(response: string): string | null {
+  const errors = validateTemplate(parse(response));
+  if (errors.length === 0) return null;
+
+  return `hmm, that reply has some problems !!\n${errors.map((e) => `• ${e}`).join('\n')}`;
 }
 
 export function validateTemplate(nodes: Node[]): string[] {

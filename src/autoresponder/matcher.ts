@@ -5,6 +5,8 @@ export function matchesTrigger(
   trigger: string,
   mode: MatchMode,
 ): boolean {
+  if (mode === 'event') return false;
+
   const trig = trigger.toLowerCase().trim();
   if (trig.length === 0) return false;
 

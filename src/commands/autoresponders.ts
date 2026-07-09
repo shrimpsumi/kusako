@@ -15,18 +15,10 @@ import {
   setMatchMode,
   type MatchMode,
 } from '../autoresponder/store.js';
-import { parse } from '../autoresponder/parser.js';
-import { validateTemplate } from '../autoresponder/validate.js';
+import { templateIssues } from '../autoresponder/validate.js';
 
 const TRIGGER_MAX = 100;
 const RESPONSE_MAX = 2000;
-
-function templateIssues(response: string): string | null {
-  const errors = validateTemplate(parse(response));
-  if (errors.length === 0) return null;
-
-  return `hmm, that reply has some problems !!\n${errors.map((e) => `• ${e}`).join('\n')}`;
-}
 
 export const autoresponders: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -148,6 +140,13 @@ export const autoresponders: SlashCommand = {
     if (sub === 'add') {
       const trigger = interaction.options.getString('trigger', true);
       const response = interaction.options.getString('response', true);
+
+      if (trigger.trim().toLowerCase().startsWith('event:')) {
+        await interaction.reply({
+          content: `trigger names starting with ${inlineCode('event:')} are reserved for ${inlineCode('/events')} !`,
+        });
+        return;
+      }
 
       const issues = templateIssues(response);
       if (issues) {

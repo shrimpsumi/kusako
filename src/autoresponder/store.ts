@@ -1,6 +1,18 @@
 import { db } from '../db.js';
 
-export type MatchMode = 'exact' | 'startswith' | 'endswith' | 'includes';
+export type MatchMode =
+  | 'exact'
+  | 'startswith'
+  | 'endswith'
+  | 'includes'
+  | 'event';
+
+export const EVENT_KINDS = ['join', 'leave', 'boost'] as const;
+export type EventKind = (typeof EVENT_KINDS)[number];
+
+export function eventTriggerKey(kind: EventKind): string {
+  return `event:${kind}`;
+}
 
 export interface Autoresponder {
   guildId: string;
@@ -44,7 +56,8 @@ export function getAutoresponder(
 ): Autoresponder | null {
   const row = db()
     .prepare(
-      'SELECT * FROM autoresponders WHERE guild_id = ? AND trigger_key = ?',
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode != 'event'`,
     )
     .get(guildId, key(trigger)) as Row | undefined;
 
@@ -54,7 +67,8 @@ export function getAutoresponder(
 export function listAutoresponders(guildId: string): Autoresponder[] {
   const rows = db()
     .prepare(
-      'SELECT * FROM autoresponders WHERE guild_id = ? ORDER BY trigger_key',
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND match_mode != 'event' ORDER BY trigger_key`,
     )
     .all(guildId) as Row[];
 
@@ -86,7 +100,7 @@ export function editAutoresponder(
   const result = db()
     .prepare(
       `UPDATE autoresponders SET response = ?, updated_at = ?
-       WHERE guild_id = ? AND trigger_key = ?`,
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode != 'event'`,
     )
     .run(response, Date.now(), guildId, key(trigger));
 
@@ -101,7 +115,7 @@ export function setMatchMode(
   const result = db()
     .prepare(
       `UPDATE autoresponders SET match_mode = ?, updated_at = ?
-       WHERE guild_id = ? AND trigger_key = ?`,
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode != 'event'`,
     )
     .run(mode, Date.now(), guildId, key(trigger));
 
@@ -111,9 +125,56 @@ export function setMatchMode(
 export function removeAutoresponder(guildId: string, trigger: string): boolean {
   const result = db()
     .prepare(
-      'DELETE FROM autoresponders WHERE guild_id = ? AND trigger_key = ?',
+      `DELETE FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode != 'event'`,
     )
     .run(guildId, key(trigger));
+
+  return result.changes > 0;
+}
+
+export function setEventResponder(
+  guildId: string,
+  kind: EventKind,
+  response: string,
+): void {
+  const now = Date.now();
+  const triggerKey = eventTriggerKey(kind);
+  db()
+    .prepare(
+      `INSERT INTO autoresponders
+        (guild_id, trigger, trigger_key, response, match_mode, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'event', ?, ?)
+       ON CONFLICT (guild_id, trigger_key)
+       DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at`,
+    )
+    .run(guildId, triggerKey, triggerKey, response, now, now);
+}
+
+export function getEventResponder(
+  guildId: string,
+  kind: EventKind,
+): Autoresponder | null {
+  const row = db()
+    .prepare(
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .get(guildId, eventTriggerKey(kind)) as Row | undefined;
+
+  return row ? toModel(row) : null;
+}
+
+export function removeEventResponder(
+  guildId: string,
+  kind: EventKind,
+): boolean {
+  const result = db()
+    .prepare(
+      `DELETE FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .run(guildId, eventTriggerKey(kind));
 
   return result.changes > 0;
 }

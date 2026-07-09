@@ -4,6 +4,7 @@ import { commands } from './commands/index.js';
 import { registerReady } from './events/ready.js';
 import { registerInteractionCreate } from './events/interactionCreate.js';
 import { registerMessageCreate } from './events/messageCreate.js';
+import { registerGuildEvents } from './events/guildEvents.js';
 
 import { logger } from './logger.js';
 import { db } from './db.js';
@@ -20,6 +21,7 @@ async function main(): Promise<void> {
   registerReady(client);
   registerInteractionCreate(client);
   registerMessageCreate(client);
+  registerGuildEvents(client);
 
   await client.login(env.botToken);
 }
