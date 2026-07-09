@@ -5,7 +5,7 @@ import { listAutoresponders } from '../autoresponder/store.js';
 import { matchesTrigger } from '../autoresponder/matcher.js';
 import { parse } from '../autoresponder/parser.js';
 import { evaluate } from '../autoresponder/evaluate.js';
-import { scheduleMessage } from '../scheduler.js';
+import { deliver } from '../autoresponder/deliver.js';
 import { logger } from '../logger.js';
 
 export function registerMessageCreate(client: SakoClient): void {
@@ -43,71 +43,11 @@ export function registerMessageCreate(client: SakoClient): void {
           continue;
         }
 
-        const { actions } = result;
-
-        const destination = actions.dm
-          ? await message.author.createDM().catch(() => null)
-          : message.channel;
-
-        if (!destination) {
-          await message.reply({
-            content: "i couldn't dm you ! check your privacy settings c:",
-            allowedMentions: { parse: [] },
-          });
-        } else {
-          let offset = 0;
-          for (const segment of result.segments) {
-            offset += segment.delaySeconds;
-            const content = segment.content.slice(0, 2000);
-            if (content.length === 0 && segment.embeds.length === 0) continue;
-
-            try {
-              if (offset === 0) {
-                await destination.send({
-                  content: content.length > 0 ? content : undefined,
-                  embeds: segment.embeds,
-                  allowedMentions: { parse: ['users', 'roles'] },
-                });
-              } else {
-                scheduleMessage(
-                  destination.id,
-                  content,
-                  offset,
-                  segment.embeds,
-                );
-              }
-            } catch (err) {
-              if (!actions.dm) throw err;
-              await message.reply({
-                content: "i couldn't dm you ! check your privacy settings c:",
-                allowedMentions: { parse: [] },
-              });
-              break;
-            }
-          }
-        }
-
-        for (const emoji of actions.reactions) {
-          try {
-            await message.react(emoji);
-          } catch (err) {
-            logger.warn(
-              { err, emoji, trigger: responder.trigger },
-              'react failed',
-            );
-          }
-        }
-
-        if (actions.deleteTrigger) {
-          try {
-            await message.delete();
-          } catch (err) {
-            logger.warn(
-              { err, trigger: responder.trigger },
-              'deletetrigger failed',
-            );
-          }
-        }
+        await deliver(result.segments, result.actions, {
+          member: message.member,
+          channel: message.channel,
+          triggerMessage: message,
+        });
       } catch (err) {
         logger.error(
           { err, guild: message.guildId, trigger: responder.trigger },
