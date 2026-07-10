@@ -32,7 +32,9 @@ function checkAmount(
   errors: string[],
 ): void {
   const value = arg ?? '';
-  if (DYNAMIC_ARG.test(value.trim())) return;
+  const trimmed = value.trim();
+  const dynamic = allowNegative ? trimmed.replace(/^-/, '') : trimmed;
+  if (DYNAMIC_ARG.test(dynamic)) return;
 
   const amount = parseAmount(value);
   const bad = amount === null || amount === 0 || (!allowNegative && amount < 0);

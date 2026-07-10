@@ -12,11 +12,12 @@ export const effects = new Map<string, Effect>([
     'modifybal',
     (meta, args) => {
       const amount = parseAmount(args[0] ?? '');
-      if (amount === null || amount === 0) {
+      if (amount === null) {
         throw new EffectError(
           'this autoresponder has a broken {modifybal} tag !',
         );
       }
+      if (amount === 0) return;
 
       const result = modifyBalance(
         meta.guildId,
@@ -38,11 +39,12 @@ export const effects = new Map<string, Effect>([
     (meta, args) => {
       const name = args[0] ?? '';
       const delta = parseAmount(args[1] ?? '');
-      if (name.length === 0 || delta === null || delta === 0) {
+      if (name.length === 0 || delta === null) {
         throw new EffectError(
           'this autoresponder has a broken {modifyinv} tag !',
         );
       }
+      if (delta === 0) return;
 
       const item = getItem(meta.guildId, name);
       if (!item) {
