@@ -2,7 +2,7 @@ import { Events } from 'discord.js';
 
 import type { SakoClient } from '../client.js';
 import { listAutoresponders } from '../autoresponder/store.js';
-import { matchesTrigger } from '../autoresponder/matcher.js';
+import { matchesTrigger, extractArgs } from '../autoresponder/matcher.js';
 import { parse } from '../autoresponder/parser.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
@@ -31,6 +31,11 @@ export function registerMessageCreate(client: SakoClient): void {
             member: message.member,
             guild: message.guild,
             channel: message.channel,
+            messageArgs: extractArgs(
+              message.content,
+              responder.trigger,
+              responder.matchMode,
+            ),
           },
           responder.triggerKey,
         );

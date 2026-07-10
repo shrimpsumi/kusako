@@ -1,6 +1,6 @@
 export const YEAR_SECONDS = 31_536_000;
 
-export const DYNAMIC_ARG = /^\[\w+\]$/;
+export const DYNAMIC_ARG = /^\[(\$\d+\+?|\w+)\]$/;
 
 export function interpolateArgs(
   args: string[],
@@ -8,7 +8,7 @@ export function interpolateArgs(
 ): string[] {
   return args.map((arg) =>
     arg.replace(
-      /\[(\w+)\]/g,
+      /\[(\$\d+\+?|\w+)\]/g,
       (raw, name: string) => captures.get(name.toLowerCase()) ?? raw,
     ),
   );

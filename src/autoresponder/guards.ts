@@ -197,6 +197,26 @@ export const guards = new Map<string, Guard>([
     },
   ],
   [
+    'requirearg',
+    (_meta, args, ctx) => {
+      const needed = parseAmount(args[0] ?? '');
+      if (needed === null || needed <= 0) {
+        return {
+          ok: false,
+          message: 'this autoresponder has a broken {requirearg} tag !',
+        };
+      }
+
+      const have = ctx.messageArgs?.length ?? 0;
+      if (have >= needed) return { ok: true };
+
+      return {
+        ok: false,
+        message: `that needs at least ${needed} word${needed === 1 ? '' : 's'} with it ! (you gave ${have})`,
+      };
+    },
+  ],
+  [
     'denyuser',
     (meta, args) => {
       const id = userIdOf(args[0] ?? '');

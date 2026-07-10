@@ -155,6 +155,12 @@ export async function evaluate(
   };
 
   const captures = new Map<string, string>();
+  const captureIndices = new Map<string, number>();
+  const words = ctx.messageArgs ?? [];
+  words.forEach((word, i) => {
+    captures.set(`$${i + 1}`, word);
+    captures.set(`$${i + 1}+`, words.slice(i).join(' '));
+  });
   const segments: Segment[] = [];
   const queuedEffects: Array<{ name: string; args: string[] }> = [];
   let current = '';
@@ -212,7 +218,10 @@ export async function evaluate(
     const generate = generators.get(node.name);
     if (generate) {
       try {
-        captures.set(node.captureName ?? node.name, generate(ctx, args));
+        const result = generate(ctx, args, captureIndices);
+        const name = node.captureName ?? node.name;
+        captures.set(name, result.value);
+        if (result.index !== undefined) captureIndices.set(name, result.index);
       } catch {
         current += node.raw;
       }

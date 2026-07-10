@@ -1,6 +1,6 @@
 import type { Node } from './ast.js';
 import { parse } from './parser.js';
-import { generators, RANGE_FORMAT } from './generators.js';
+import { generators, RANGE_FORMAT, WEIGHTED_OPTION } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 import { parseColor } from '../embeds.js';
 
@@ -53,6 +53,7 @@ export function templateIssues(response: string): string | null {
 export function validateTemplate(nodes: Node[]): string[] {
   const errors: string[] = [];
   const bound = new Set<string>();
+  const optionCounts = new Map<string, number>();
   let boundaries = 0;
   let cooldowns = 0;
   let reactions = 0;
@@ -60,6 +61,7 @@ export function validateTemplate(nodes: Node[]): string[] {
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
+      if (/^\$\d+\+?$/.test(node.name)) continue;
       if (!bound.has(node.name)) {
         errors.push(
           `[${node.name}] has nothing creating it before that point. add a tag like {range as ${node.name}: 10-100} first !`,
@@ -87,11 +89,46 @@ export function validateTemplate(nodes: Node[]): string[] {
             : `{range} needs a number span, like {range:10-100}`,
         );
       }
-      if (
-        node.name === 'choice' &&
-        node.args.filter((option) => option.length > 0).length < 2
-      ) {
-        errors.push(`{choice} needs at least two options split by |`);
+      if (node.name === 'choice') {
+        if (node.args.filter((option) => option.length > 0).length < 2) {
+          errors.push(`{choice} needs at least two options split by |`);
+        }
+        optionCounts.set(captureName, node.args.length);
+      }
+
+      if (node.name === 'weightedchoice') {
+        if (node.args.length < 2) {
+          errors.push('{weightedchoice} needs at least two options split by |');
+        }
+        for (const option of node.args) {
+          const match = WEIGHTED_OPTION.exec(option);
+          if (!match || Number(match[1]) <= 0) {
+            errors.push(
+              `"${option}" needs a weight in front ! write {weightedchoice as name: 70 common | 25 rare | 5 legendary}`,
+            );
+          }
+        }
+        optionCounts.set(captureName, node.args.length);
+      }
+
+      if (node.name === 'lockedchoice') {
+        const source = (node.args[0] ?? '').trim().toLowerCase();
+        const options = node.args.length - 1;
+
+        if (source.length === 0 || options < 1) {
+          errors.push(
+            '{lockedchoice} needs a source choice then options, like {lockedchoice as flavor: catch | ew | wow | hm}',
+          );
+        } else if (!optionCounts.has(source)) {
+          errors.push(
+            `{lockedchoice} points at [${source}], but no choice with that name comes before it !`,
+          );
+        } else if (optionCounts.get(source) !== options) {
+          errors.push(
+            `{lockedchoice} has ${options} option${options === 1 ? '' : 's'} but [${source}] has ${optionCounts.get(source)}. they pair up by position, so the counts must match !`,
+          );
+        }
+        optionCounts.set(captureName, options);
       }
       continue;
     }
@@ -122,6 +159,11 @@ export function validateTemplate(nodes: Node[]): string[] {
 
     if (node.name === 'requirebal') {
       checkAmount(node.args[0], 'requirebal', false, errors);
+      continue;
+    }
+
+    if (node.name === 'requirearg') {
+      checkAmount(node.args[0], 'requirearg', false, errors);
       continue;
     }
 
