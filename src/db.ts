@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS items (
   name_key TEXT NOT NULL,
   description TEXT,
   emoji TEXT,
+  use_reply TEXT,
+  giftable INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (guild_id, name_key)
@@ -97,6 +99,20 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS shop_listings (
+  guild_id TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  stock INTEGER,
+  required_role_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, item_key),
+  FOREIGN KEY (guild_id, item_key)
+    REFERENCES items (guild_id, name_key)
+    ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS embeds (
   guild_id TEXT NOT NULL,
   name TEXT NOT NULL,
@@ -114,12 +130,23 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_messages_send_at
 let instance: Database.Database | null = null;
 
 function migrate(database: Database.Database): void {
-  const columns = database
-    .prepare('PRAGMA table_info(scheduled_messages)')
-    .all() as Array<{ name: string }>;
+  const hasColumn = (table: string, column: string): boolean => {
+    const columns = database
+      .prepare(`PRAGMA table_info(${table})`)
+      .all() as Array<{ name: string }>;
+    return columns.some((c) => c.name === column);
+  };
 
-  if (!columns.some((column) => column.name === 'embeds_json')) {
+  if (!hasColumn('scheduled_messages', 'embeds_json')) {
     database.exec('ALTER TABLE scheduled_messages ADD COLUMN embeds_json TEXT');
+  }
+  if (!hasColumn('items', 'use_reply')) {
+    database.exec('ALTER TABLE items ADD COLUMN use_reply TEXT');
+  }
+  if (!hasColumn('items', 'giftable')) {
+    database.exec(
+      'ALTER TABLE items ADD COLUMN giftable INTEGER NOT NULL DEFAULT 1',
+    );
   }
 }
 
