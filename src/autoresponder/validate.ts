@@ -7,6 +7,7 @@ import { parseColor } from '../embeds.js';
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
 const MAX_EMBEDS = 3;
+const MAX_ROLE_TAGS = 3;
 
 function checkDuration(
   arg: string | undefined,
@@ -60,6 +61,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   let cooldowns = 0;
   let reactions = 0;
   let embedTags = 0;
+  let roleTags = 0;
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
@@ -262,6 +264,21 @@ export function validateTemplate(nodes: Node[]): string[] {
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push(
           '{denychannel} needs a channel, like {denychannel:#general} or a channel id',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'giverole' || node.name === 'takerole') {
+      roleTags += 1;
+      if (roleTags === MAX_ROLE_TAGS + 1) {
+        errors.push(
+          `max ${MAX_ROLE_TAGS} {giverole}/{takerole} tags per autoresponder !`,
+        );
+      }
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          `{${node.name}} needs a role, like {${node.name}:@fisher} or a role id`,
         );
       }
       continue;

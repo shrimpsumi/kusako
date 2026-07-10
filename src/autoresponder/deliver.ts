@@ -82,6 +82,21 @@ export async function deliver(
     }
   }
 
+  const roleSets = [
+    ['giverole', actions.giveRoleIds],
+    ['takerole', actions.takeRoleIds],
+  ] as const;
+  for (const [tag, roleIds] of roleSets) {
+    for (const roleId of roleIds) {
+      try {
+        if (tag === 'giverole') await target.member.roles.add(roleId);
+        else await target.member.roles.remove(roleId);
+      } catch (err) {
+        logger.warn({ err, roleId }, `${tag} failed`);
+      }
+    }
+  }
+
   if (actions.deleteTrigger && target.triggerMessage) {
     try {
       await target.triggerMessage.delete();

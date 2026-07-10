@@ -15,7 +15,7 @@ import { parse } from './parser.js';
 import type { RenderContext, EvalMeta } from './context.js';
 import { generators } from './generators.js';
 import { placeholders } from './placeholders.js';
-import { guards, resolveChannelArg } from './guards.js';
+import { guards, resolveChannelArg, resolveRoleArg } from './guards.js';
 import { effects, EffectError } from './effects.js';
 import { getCooldownRemaining, setCooldown } from './cooldowns.js';
 import {
@@ -37,6 +37,8 @@ export interface MessageActions {
   deleteTrigger: boolean;
   dm: boolean;
   sendToChannelId: string | null;
+  giveRoleIds: string[];
+  takeRoleIds: string[];
 }
 
 export type EvalResult =
@@ -172,6 +174,8 @@ export async function evaluate(
     deleteTrigger: false,
     dm: false,
     sendToChannelId: null,
+    giveRoleIds: [],
+    takeRoleIds: [],
   };
 
   const silent = nodes.some(
@@ -325,6 +329,19 @@ export async function evaluate(
       if (channel && channel.isTextBased()) {
         actions.sendToChannelId = channel.id;
       }
+      continue;
+    }
+
+    if (node.name === 'giverole' || node.name === 'takerole') {
+      const role = resolveRoleArg(ctx, args[0] ?? '');
+      if (!role) {
+        current += node.raw;
+        continue;
+      }
+      (node.name === 'giverole'
+        ? actions.giveRoleIds
+        : actions.takeRoleIds
+      ).push(role.id);
       continue;
     }
 
