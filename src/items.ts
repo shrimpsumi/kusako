@@ -6,6 +6,8 @@ export interface Item {
   nameKey: string;
   description: string | null;
   emoji: string | null;
+  useReply: string | null;
+  giftable: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -26,6 +28,8 @@ interface ItemRow {
   name_key: string;
   description: string | null;
   emoji: string | null;
+  use_reply: string | null;
+  giftable: number;
   created_at: number;
   updated_at: number;
 }
@@ -37,6 +41,8 @@ function toItem(row: ItemRow): Item {
     nameKey: row.name_key,
     description: row.description,
     emoji: row.emoji,
+    useReply: row.use_reply,
+    giftable: row.giftable === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -67,6 +73,8 @@ export function createItem(
   name: string,
   description: string | null,
   emoji: string | null,
+  useReply: string | null,
+  giftable: boolean,
 ): boolean {
   const trimmed = name.trim();
   if (trimmed.length === 0) return false;
@@ -75,10 +83,20 @@ export function createItem(
   const result = db()
     .prepare(
       `INSERT OR IGNORE INTO items
-        (guild_id, name, name_key, description, emoji, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (guild_id, name, name_key, description, emoji, use_reply, giftable, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(guildId, trimmed, key(name), description, emoji, now, now);
+    .run(
+      guildId,
+      trimmed,
+      key(name),
+      description,
+      emoji,
+      useReply,
+      giftable ? 1 : 0,
+      now,
+      now,
+    );
 
   return result.changes > 0;
 }
@@ -86,19 +104,26 @@ export function createItem(
 export function editItem(
   guildId: string,
   name: string,
-  fields: { description?: string; emoji?: string },
+  fields: {
+    description?: string;
+    emoji?: string;
+    useReply?: string | null;
+    giftable?: boolean;
+  },
 ): boolean {
   const existing = getItem(guildId, name);
   if (!existing) return false;
 
   db()
     .prepare(
-      `UPDATE items SET description = ?, emoji = ?, updated_at = ?
+      `UPDATE items SET description = ?, emoji = ?, use_reply = ?, giftable = ?, updated_at = ?
        WHERE guild_id = ? AND name_key = ?`,
     )
     .run(
       fields.description ?? existing.description,
       fields.emoji ?? existing.emoji,
+      fields.useReply === undefined ? existing.useReply : fields.useReply,
+      (fields.giftable ?? existing.giftable) ? 1 : 0,
       Date.now(),
       guildId,
       existing.nameKey,
@@ -196,6 +221,31 @@ export function modifyInventory(
     }
 
     return { ok: true, quantity: next };
+  });
+
+  return run();
+}
+
+export function transferItem(
+  guildId: string,
+  fromUserId: string,
+  toUserId: string,
+  itemName: string,
+  quantity: number,
+): InventoryResult {
+  const amount = Math.trunc(quantity);
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    return { ok: false, quantity: getQuantity(guildId, fromUserId, itemName) };
+  }
+
+  const run = db().transaction((): InventoryResult => {
+    const taken = modifyInventory(guildId, fromUserId, itemName, -amount);
+    if (!taken.ok) return taken;
+
+    const given = modifyInventory(guildId, toUserId, itemName, amount);
+    if (!given.ok) throw new Error('item transfer failed');
+
+    return taken;
   });
 
   return run();
