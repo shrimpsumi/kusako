@@ -11,12 +11,42 @@ export type Guard = (
 ) => GuardResult;
 
 const CHANNEL_MENTION = /^<#(\d+)>$/;
-const ROLE_MENTION = /^<@&(\d+)>$/;
+const ROLE_MENTION = /^<@&?(\d+)>$/;
+const USER_MENTION = /^<@!?(\d+)>$/;
 
 function targetOf(raw: string, mention: RegExp, prefix: string): string {
   const match = mention.exec(raw);
   if (match) return match[1]!;
   return raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+}
+
+export function resolveChannelArg(ctx: RenderContext, raw: string) {
+  const target = targetOf(raw.trim(), CHANNEL_MENTION, '#');
+  if (target.length === 0) return null;
+
+  const lower = target.toLowerCase();
+  return (
+    (/^\d+$/.test(target) ? ctx.guild.channels.cache.get(target) : null) ??
+    ctx.guild.channels.cache.find((c) => c.name.toLowerCase() === lower) ??
+    null
+  );
+}
+
+export function resolveRoleArg(ctx: RenderContext, raw: string) {
+  const target = targetOf(raw.trim(), ROLE_MENTION, '@');
+  if (target.length === 0) return null;
+
+  const lower = target.toLowerCase();
+  return (
+    (/^\d+$/.test(target) ? ctx.guild.roles.cache.get(target) : null) ??
+    ctx.guild.roles.cache.find((r) => r.name.toLowerCase() === lower) ??
+    null
+  );
+}
+
+function userIdOf(raw: string): string | null {
+  const target = targetOf(raw.trim(), USER_MENTION, '@');
+  return /^\d+$/.test(target) ? target : null;
 }
 
 export const guards = new Map<string, Guard>([
@@ -81,12 +111,7 @@ export const guards = new Map<string, Guard>([
         };
       }
 
-      const target = targetOf(raw, CHANNEL_MENTION, '#');
-      const lower = target.toLowerCase();
-      const channel =
-        (/^\d+$/.test(target) ? ctx.guild.channels.cache.get(target) : null) ??
-        ctx.guild.channels.cache.find((c) => c.name.toLowerCase() === lower);
-
+      const channel = resolveChannelArg(ctx, raw);
       if (!channel) {
         return {
           ok: false,
@@ -103,6 +128,19 @@ export const guards = new Map<string, Guard>([
     },
   ],
   [
+    'denychannel',
+    (_meta, args, ctx) => {
+      const channel = resolveChannelArg(ctx, args[0] ?? '');
+      if (channel && ctx.channel.id === channel.id) {
+        return {
+          ok: false,
+          message: `that doesn't work in ${channel.toString()} !`,
+        };
+      }
+      return { ok: true };
+    },
+  ],
+  [
     'requirerole',
     (_meta, args, ctx) => {
       const raw = (args[0] ?? '').trim();
@@ -113,12 +151,7 @@ export const guards = new Map<string, Guard>([
         };
       }
 
-      const target = targetOf(raw, ROLE_MENTION, '@');
-      const lower = target.toLowerCase();
-      const role =
-        (/^\d+$/.test(target) ? ctx.guild.roles.cache.get(target) : null) ??
-        ctx.guild.roles.cache.find((r) => r.name.toLowerCase() === lower);
-
+      const role = resolveRoleArg(ctx, raw);
       if (!role) {
         return {
           ok: false,
@@ -132,6 +165,45 @@ export const guards = new Map<string, Guard>([
         ok: false,
         message: `you need the **${role.name}** role to do that !`,
       };
+    },
+  ],
+  [
+    'denyrole',
+    (_meta, args, ctx) => {
+      const role = resolveRoleArg(ctx, args[0] ?? '');
+      if (role && ctx.member.roles.cache.has(role.id)) {
+        return {
+          ok: false,
+          message: `the **${role.name}** role can't use this one !`,
+        };
+      }
+      return { ok: true };
+    },
+  ],
+  [
+    'requireuser',
+    (meta, args) => {
+      const id = userIdOf(args[0] ?? '');
+      if (!id) {
+        return {
+          ok: false,
+          message: 'this autoresponder has a broken {requireuser} tag !',
+        };
+      }
+
+      if (meta.userId === id) return { ok: true };
+
+      return { ok: false, message: "this one isn't for you c:" };
+    },
+  ],
+  [
+    'denyuser',
+    (meta, args) => {
+      const id = userIdOf(args[0] ?? '');
+      if (id && meta.userId === id) {
+        return { ok: false, message: "this one isn't for you c:" };
+      }
+      return { ok: true };
     },
   ],
 ]);

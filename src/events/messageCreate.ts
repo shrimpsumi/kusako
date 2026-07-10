@@ -36,10 +36,12 @@ export function registerMessageCreate(client: SakoClient): void {
         );
 
         if (!result.ok) {
-          await message.channel.send({
-            content: result.message,
-            allowedMentions: { parse: [] },
-          });
+          if (!result.silent) {
+            await message.channel.send({
+              content: result.message,
+              allowedMentions: { parse: [] },
+            });
+          }
           continue;
         }
 

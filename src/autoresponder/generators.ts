@@ -28,4 +28,14 @@ export const generators = new Map<string, Generator>([
       return options[Math.floor(Math.random() * options.length)]!;
     },
   ],
+  [
+    'randommember',
+    (ctx) => {
+      const pool = ctx.guild.members.cache.filter((m) => !m.user.bot);
+      const member = pool.random();
+      if (!member) throw new Error('no cached members');
+
+      return member.toString();
+    },
+  ],
 ]);

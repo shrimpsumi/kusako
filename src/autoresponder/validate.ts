@@ -2,6 +2,7 @@ import type { Node } from './ast.js';
 import { parse } from './parser.js';
 import { generators, RANGE_FORMAT } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
+import { parseColor } from '../embeds.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
@@ -157,7 +158,9 @@ export function validateTemplate(nodes: Node[]): string[] {
     if (node.name === 'react') {
       reactions += 1;
       if (reactions === MAX_REACTIONS + 1) {
-        errors.push(`max ${MAX_REACTIONS} {react} tags per autoresponder !`);
+        errors.push(
+          `max ${MAX_REACTIONS} {react}/{reactreply} tags per autoresponder !`,
+        );
       }
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push('{react} needs an emoji, like {react:🔥}');
@@ -169,6 +172,62 @@ export function validateTemplate(nodes: Node[]): string[] {
       embedTags += 1;
       if (embedTags === MAX_EMBEDS + 1) {
         errors.push(`max ${MAX_EMBEDS} {embed} tags per autoresponder !`);
+      }
+      const arg = (node.args[0] ?? '').trim();
+      if (arg.startsWith('#') && parseColor(arg) === null) {
+        errors.push(
+          `{embed:${arg}} isn't a valid hex color ! try something like {embed:#faf0e7}`,
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'reactreply') {
+      reactions += 1;
+      if (reactions === MAX_REACTIONS + 1) {
+        errors.push(
+          `max ${MAX_REACTIONS} {react}/{reactreply} tags per autoresponder !`,
+        );
+      }
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push('{reactreply} needs an emoji, like {reactreply:🔥}');
+      }
+      continue;
+    }
+
+    if (node.name === 'send') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{send} needs a channel, like {send:#showcase} or a channel id',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'requireuser' || node.name === 'denyuser') {
+      const arg = (node.args[0] ?? '').trim();
+      if (!/^(<@!?\d+>|@?\d+)$/.test(arg)) {
+        errors.push(
+          `{${node.name}} needs a user id or mention, like {${node.name}:395526710101278721}`,
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'denychannel') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{denychannel} needs a channel, like {denychannel:#general} or a channel id',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'denyrole') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{denyrole} needs a role, like {denyrole:@mischievous} or a role id',
+        );
       }
       continue;
     }

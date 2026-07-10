@@ -4,6 +4,7 @@ import { db } from '../db.js';
 import {
   getEmbed,
   isRenderable,
+  parseColor,
   EMBED_LIMITS,
   URLISH,
   type EmbedData,
@@ -14,7 +15,7 @@ import { parse } from './parser.js';
 import type { RenderContext, EvalMeta } from './context.js';
 import { generators } from './generators.js';
 import { placeholders } from './placeholders.js';
-import { guards } from './guards.js';
+import { guards, resolveChannelArg } from './guards.js';
 import { effects, EffectError } from './effects.js';
 import { getCooldownRemaining, setCooldown } from './cooldowns.js';
 import {
@@ -32,13 +33,15 @@ export interface Segment {
 
 export interface MessageActions {
   reactions: string[];
+  replyReactions: string[];
   deleteTrigger: boolean;
   dm: boolean;
+  sendToChannelId: string | null;
 }
 
 export type EvalResult =
   | { ok: true; segments: Segment[]; actions: MessageActions }
-  | { ok: false; message: string };
+  | { ok: false; message: string; silent: boolean };
 
 async function renderInline(
   template: string,
@@ -159,12 +162,19 @@ export async function evaluate(
   let cooldownSeconds: number | null = null;
   const actions: MessageActions = {
     reactions: [],
+    replyReactions: [],
     deleteTrigger: false,
     dm: false,
+    sendToChannelId: null,
   };
+
+  const silent = nodes.some(
+    (node) => node.kind === 'placeholder' && node.name === 'silent',
+  );
 
   let currentEmbeds: APIEmbed[] = [];
   let wrapCurrent = false;
+  let wrapColor: number | null = null;
 
   const closeSegment = (nextDelay: number) => {
     let content = current.trim();
@@ -173,7 +183,7 @@ export async function evaluate(
     if (wrapCurrent && content.length > 0) {
       embeds.unshift({
         description: content.slice(0, EMBED_LIMITS.description),
-        color: colors.cream,
+        color: wrapColor ?? colors.cream,
       });
       content = '';
     }
@@ -183,6 +193,7 @@ export async function evaluate(
     currentDelay = nextDelay;
     currentEmbeds = [];
     wrapCurrent = false;
+    wrapColor = null;
   };
 
   for (const node of nodes) {
@@ -231,6 +242,7 @@ export async function evaluate(
         return {
           ok: false,
           message: `slow down !! you can do that again in ${formatDuration(remaining)} c:`,
+          silent,
         };
       }
 
@@ -243,6 +255,17 @@ export async function evaluate(
 
       if (name.length === 0) {
         wrapCurrent = true;
+        continue;
+      }
+
+      if (name.startsWith('#')) {
+        const color = parseColor(name);
+        if (color === null) {
+          current += node.raw;
+          continue;
+        }
+        wrapCurrent = true;
+        wrapColor = color;
         continue;
       }
 
@@ -268,6 +291,12 @@ export async function evaluate(
       continue;
     }
 
+    if (node.name === 'reactreply') {
+      const emoji = (args[0] ?? '').trim();
+      if (emoji.length > 0) actions.replyReactions.push(emoji);
+      continue;
+    }
+
     if (node.name === 'deletetrigger') {
       actions.deleteTrigger = true;
       continue;
@@ -278,10 +307,24 @@ export async function evaluate(
       continue;
     }
 
+    if (node.name === 'silent') {
+      continue;
+    }
+
+    if (node.name === 'send') {
+      const channel = resolveChannelArg(ctx, args[0] ?? '');
+      if (channel && channel.isTextBased()) {
+        actions.sendToChannelId = channel.id;
+      }
+      continue;
+    }
+
     const guard = guards.get(node.name);
     if (guard) {
       const result = guard(meta, args, ctx);
-      if (!result.ok) return { ok: false, message: result.message };
+      if (!result.ok) {
+        return { ok: false, message: result.message, silent };
+      }
       continue;
     }
 
@@ -321,7 +364,7 @@ export async function evaluate(
       })();
     } catch (err) {
       if (err instanceof EffectError) {
-        return { ok: false, message: err.message };
+        return { ok: false, message: err.message, silent };
       }
       throw err;
     }

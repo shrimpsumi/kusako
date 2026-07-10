@@ -17,9 +17,15 @@ export async function deliver(
   actions: MessageActions,
   target: DeliveryTarget,
 ): Promise<void> {
+  const redirect =
+    actions.sendToChannelId && actions.sendToChannelId !== target.channel.id
+      ? target.channel.guild.channels.cache.get(actions.sendToChannelId)
+      : null;
+  const base = redirect && redirect.isTextBased() ? redirect : target.channel;
+
   const destination = actions.dm
     ? await target.member.createDM().catch(() => null)
-    : target.channel;
+    : base;
 
   let firstSent: Message | null = null;
 
@@ -61,9 +67,13 @@ export async function deliver(
     }
   }
 
-  const reactTarget = target.triggerMessage ?? firstSent;
-  if (reactTarget) {
-    for (const emoji of actions.reactions) {
+  const reactionSets: Array<[Message | null, string[]]> = [
+    [target.triggerMessage ?? firstSent, actions.reactions],
+    [firstSent, actions.replyReactions],
+  ];
+  for (const [reactTarget, emojis] of reactionSets) {
+    if (!reactTarget) continue;
+    for (const emoji of emojis) {
       try {
         await reactTarget.react(emoji);
       } catch (err) {
