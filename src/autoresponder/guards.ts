@@ -49,6 +49,37 @@ export function userIdOf(raw: string): string | null {
   return /^\d+$/.test(target) ? target : null;
 }
 
+export const ARG_TYPES = new Map<
+  string,
+  { ok: (ctx: RenderContext, word: string) => boolean; describe: string }
+>([
+  [
+    'number',
+    { ok: (_ctx, word) => parseAmount(word) !== null, describe: 'a number' },
+  ],
+  [
+    'user',
+    {
+      ok: (_ctx, word) => userIdOf(word) !== null,
+      describe: 'a user mention or id',
+    },
+  ],
+  [
+    'channel',
+    {
+      ok: (ctx, word) => resolveChannelArg(ctx, word) !== null,
+      describe: 'a channel',
+    },
+  ],
+  [
+    'role',
+    {
+      ok: (ctx, word) => resolveRoleArg(ctx, word) !== null,
+      describe: 'a role',
+    },
+  ],
+]);
+
 export const guards = new Map<string, Guard>([
   [
     'requirebal',
@@ -204,20 +235,31 @@ export const guards = new Map<string, Guard>([
     'requirearg',
     (_meta, args, ctx) => {
       const needed = parseAmount(args[0] ?? '');
-      if (needed === null || needed <= 0) {
+      const typeName = (args[1] ?? '').trim().toLowerCase();
+      const type = typeName.length > 0 ? ARG_TYPES.get(typeName) : undefined;
+      if (needed === null || needed <= 0 || (typeName.length > 0 && !type)) {
         return {
           ok: false,
           message: 'this autoresponder has a broken {requirearg} tag !',
         };
       }
 
-      const have = ctx.messageArgs?.length ?? 0;
-      if (have >= needed) return { ok: true };
+      const words = ctx.messageArgs ?? [];
+      if (words.length < needed) {
+        return {
+          ok: false,
+          message: `that needs at least ${needed} word${needed === 1 ? '' : 's'} with it ! (you gave ${words.length})`,
+        };
+      }
 
-      return {
-        ok: false,
-        message: `that needs at least ${needed} word${needed === 1 ? '' : 's'} with it ! (you gave ${have})`,
-      };
+      if (type && !type.ok(ctx, words[needed - 1]!)) {
+        return {
+          ok: false,
+          message: `word ${needed} needs to be ${type.describe} !`,
+        };
+      }
+
+      return { ok: true };
     },
   ],
   [

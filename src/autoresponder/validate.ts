@@ -3,6 +3,7 @@ import { parse } from './parser.js';
 import { generators, RANGE_FORMAT, WEIGHTED_OPTION } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 import { parseColor } from '../embeds.js';
+import { ARG_TYPES } from './guards.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
@@ -184,6 +185,14 @@ export function validateTemplate(nodes: Node[]): string[] {
 
     if (node.name === 'requirearg') {
       checkAmount(node.args[0], 'requirearg', false, errors);
+      if (node.args.length > 1) {
+        const type = (node.args[1] ?? '').trim().toLowerCase();
+        if (!ARG_TYPES.has(type)) {
+          errors.push(
+            `{requirearg} only knows the types ${[...ARG_TYPES.keys()].join(' / ')}, like {requirearg:2|number}`,
+          );
+        }
+      }
       continue;
     }
 
