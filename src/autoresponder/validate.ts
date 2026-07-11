@@ -46,6 +46,22 @@ function checkAmount(
   }
 }
 
+function checkTargetArg(
+  arg: string | undefined,
+  tag: string,
+  errors: string[],
+): void {
+  const value = (arg ?? '').trim();
+  if (value.length === 0) return;
+  if (DYNAMIC_ARG.test(value)) return;
+
+  if (!/^(<@!?\d+>|@?\d+)$/.test(value)) {
+    errors.push(
+      `{${tag}}'s target needs a user id, mention, or something like [$1] — usernames don't work !`,
+    );
+  }
+}
+
 export function templateIssues(response: string): string | null {
   const errors = validateTemplate(parse(response));
   if (errors.length === 0) return null;
@@ -281,6 +297,7 @@ export function validateTemplate(nodes: Node[]): string[] {
           `{${node.name}} needs a role, like {${node.name}:@fisher} or a role id`,
         );
       }
+      checkTargetArg(node.args[1], node.name, errors);
       continue;
     }
 
@@ -304,6 +321,7 @@ export function validateTemplate(nodes: Node[]): string[] {
 
     if (node.name === 'modifybal') {
       checkAmount(node.args[0], 'modifybal', true, errors);
+      checkTargetArg(node.args[1], 'modifybal', errors);
       continue;
     }
 
@@ -314,6 +332,7 @@ export function validateTemplate(nodes: Node[]): string[] {
         );
       } else {
         checkAmount(node.args[1], 'modifyinv', true, errors);
+        checkTargetArg(node.args[2], 'modifyinv', errors);
       }
       continue;
     }

@@ -44,7 +44,7 @@ export function resolveRoleArg(ctx: RenderContext, raw: string) {
   );
 }
 
-function userIdOf(raw: string): string | null {
+export function userIdOf(raw: string): string | null {
   const target = targetOf(raw.trim(), USER_MENTION, '@');
   return /^\d+$/.test(target) ? target : null;
 }

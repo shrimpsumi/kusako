@@ -2,17 +2,24 @@ import { getCurrency, modifyBalance } from '../economy.js';
 import { getItem, modifyInventory } from '../items.js';
 import type { EvalMeta } from './context.js';
 import { parseAmount } from './args.js';
+import { userIdOf } from './guards.js';
 
 export class EffectError extends Error {}
 
 export type Effect = (meta: EvalMeta, args: string[]) => void;
+
+function targetIdOf(meta: EvalMeta, arg: string | undefined): string | null {
+  const raw = (arg ?? '').trim();
+  return raw.length > 0 ? userIdOf(raw) : meta.userId;
+}
 
 export const effects = new Map<string, Effect>([
   [
     'modifybal',
     (meta, args) => {
       const amount = parseAmount(args[0] ?? '');
-      if (amount === null) {
+      const targetId = targetIdOf(meta, args[1]);
+      if (amount === null || !targetId) {
         throw new EffectError(
           'this autoresponder has a broken {modifybal} tag !',
         );
@@ -21,15 +28,17 @@ export const effects = new Map<string, Effect>([
 
       const result = modifyBalance(
         meta.guildId,
-        meta.userId,
+        targetId,
         amount,
         `autoresponder ${meta.triggerKey}`,
       );
 
       if (!result.ok) {
         const currency = getCurrency(meta.guildId);
+        const who =
+          targetId === meta.userId ? "you don't" : `<@${targetId}> doesn't`;
         throw new EffectError(
-          `you don't have enough ${currency.emoji} ${currency.name} for that !`,
+          `${who} have enough ${currency.emoji} ${currency.name} for that !`,
         );
       }
     },
@@ -39,7 +48,8 @@ export const effects = new Map<string, Effect>([
     (meta, args) => {
       const name = args[0] ?? '';
       const delta = parseAmount(args[1] ?? '');
-      if (name.length === 0 || delta === null) {
+      const targetId = targetIdOf(meta, args[2]);
+      if (name.length === 0 || delta === null || !targetId) {
         throw new EffectError(
           'this autoresponder has a broken {modifyinv} tag !',
         );
@@ -53,10 +63,12 @@ export const effects = new Map<string, Effect>([
         );
       }
 
-      const result = modifyInventory(meta.guildId, meta.userId, name, delta);
+      const result = modifyInventory(meta.guildId, targetId, name, delta);
       if (!result.ok) {
+        const who =
+          targetId === meta.userId ? "you don't" : `<@${targetId}> doesn't`;
         throw new EffectError(
-          `you don't have enough ${item.emoji ?? '📦'} **${item.name}** for that !`,
+          `${who} have enough ${item.emoji ?? '📦'} **${item.name}** for that !`,
         );
       }
     },
