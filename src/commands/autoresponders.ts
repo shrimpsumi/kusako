@@ -3,6 +3,7 @@ import {
   PermissionFlagsBits,
   codeBlock,
   inlineCode,
+  type AutocompleteInteraction,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
@@ -19,6 +20,26 @@ import { templateIssues } from '../autoresponder/validate.js';
 
 const TRIGGER_MAX = 100;
 const RESPONSE_MAX = 2000;
+
+async function respondWithTriggers(
+  interaction: AutocompleteInteraction,
+): Promise<void> {
+  if (!interaction.inGuild()) {
+    await interaction.respond([]);
+    return;
+  }
+
+  const focused = interaction.options.getFocused().toLowerCase();
+  const choices = listAutoresponders(interaction.guildId)
+    .filter((responder) => responder.triggerKey.includes(focused))
+    .slice(0, 25)
+    .map((responder) => ({
+      name: responder.trigger,
+      value: responder.trigger,
+    }));
+
+  await interaction.respond(choices);
+}
 
 export const autoresponders: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -53,7 +74,8 @@ export const autoresponders: SlashCommand = {
             .setName('trigger')
             .setDescription('the trigger to edit')
             .setMaxLength(TRIGGER_MAX)
-            .setRequired(true),
+            .setRequired(true)
+            .setAutocomplete(true),
         )
         .addStringOption((o) =>
           o
@@ -72,7 +94,8 @@ export const autoresponders: SlashCommand = {
             .setName('trigger')
             .setDescription('the trigger to change')
             .setMaxLength(TRIGGER_MAX)
-            .setRequired(true),
+            .setRequired(true)
+            .setAutocomplete(true),
         )
         .addStringOption((o) =>
           o
@@ -105,7 +128,8 @@ export const autoresponders: SlashCommand = {
             .setName('trigger')
             .setDescription('the trigger for autoresponder to delete')
             .setMaxLength(TRIGGER_MAX)
-            .setRequired(true),
+            .setRequired(true)
+            .setAutocomplete(true),
         ),
     )
     .addSubcommand((sub) =>
@@ -122,9 +146,12 @@ export const autoresponders: SlashCommand = {
             .setName('trigger')
             .setDescription('the trigger to show')
             .setMaxLength(TRIGGER_MAX)
-            .setRequired(true),
+            .setRequired(true)
+            .setAutocomplete(true),
         ),
     ) as SlashCommandBuilder,
+
+  autocomplete: respondWithTriggers,
 
   async execute(interaction) {
     if (!interaction.inGuild()) {
