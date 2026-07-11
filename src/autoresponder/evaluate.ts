@@ -23,6 +23,7 @@ import {
   guards,
   resolveChannelArg,
   resolveRoleArg,
+  resolveMemberArg,
   userIdOf,
 } from './guards.js';
 import { effects, pendingOf, EffectError } from './effects.js';
@@ -345,22 +346,33 @@ export async function evaluate(
     if (node.name === 'giverole' || node.name === 'takerole') {
       const role = resolveRoleArg(ctx, args[0] ?? '');
       const targetRaw = (args[1] ?? '').trim();
-      const userId = targetRaw.length > 0 ? userIdOf(targetRaw) : ctx.member.id;
-      if (!role || !userId) {
+      const targetId =
+        targetRaw.length > 0 ? userIdOf(targetRaw) : ctx.member.id;
+      if (!role || !targetId) {
         current += node.raw;
         continue;
+      }
+      if (targetId !== ctx.member.id) {
+        const member = await resolveMemberArg(ctx, targetId);
+        if (!member) {
+          return {
+            ok: false,
+            message: `<@${targetId}> isn't in this server !`,
+            silent,
+          };
+        }
       }
       actions.roleActions.push({
         add: node.name === 'giverole',
         roleId: role.id,
-        userId,
+        userId: targetId,
       });
       continue;
     }
 
     const guard = guards.get(node.name);
     if (guard) {
-      const result = guard(meta, args, ctx);
+      const result = await guard(meta, args, ctx);
       if (!result.ok) {
         return { ok: false, message: result.message, silent };
       }
@@ -370,6 +382,16 @@ export async function evaluate(
     if (effects.has(node.name)) {
       queuedEffects.push({ name: node.name, args });
       const delta = pendingOf(node.name, meta, args);
+      if (delta && delta.userId !== meta.userId) {
+        const member = await resolveMemberArg(ctx, delta.userId);
+        if (!member) {
+          return {
+            ok: false,
+            message: `<@${delta.userId}> isn't in this server !`,
+            silent,
+          };
+        }
+      }
       if (delta?.kind === 'balance') {
         pending.addBalance(delta.userId, delta.delta);
       } else if (delta?.kind === 'item') {

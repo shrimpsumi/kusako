@@ -8,7 +8,7 @@ export type Guard = (
   meta: EvalMeta,
   args: string[],
   ctx: RenderContext,
-) => GuardResult;
+) => GuardResult | Promise<GuardResult>;
 
 const CHANNEL_MENTION = /^<#(\d+)>$/;
 const ROLE_MENTION = /^<@&?(\d+)>$/;
@@ -49,9 +49,21 @@ export function userIdOf(raw: string): string | null {
   return /^\d+$/.test(target) ? target : null;
 }
 
+export async function resolveMemberArg(ctx: RenderContext, raw: string) {
+  const id = userIdOf(raw);
+  if (!id) return null;
+  return (
+    ctx.guild.members.cache.get(id) ??
+    (await ctx.guild.members.fetch(id).catch(() => null))
+  );
+}
+
 export const ARG_TYPES = new Map<
   string,
-  { ok: (ctx: RenderContext, word: string) => boolean; describe: string }
+  {
+    ok: (ctx: RenderContext, word: string) => boolean | Promise<boolean>;
+    describe: string;
+  }
 >([
   [
     'number',
@@ -60,8 +72,8 @@ export const ARG_TYPES = new Map<
   [
     'user',
     {
-      ok: (_ctx, word) => userIdOf(word) !== null,
-      describe: 'a user mention or id',
+      ok: async (ctx, word) => (await resolveMemberArg(ctx, word)) !== null,
+      describe: 'someone in this server (a mention or id)',
     },
   ],
   [
@@ -233,7 +245,7 @@ export const guards = new Map<string, Guard>([
   ],
   [
     'requirearg',
-    (_meta, args, ctx) => {
+    async (_meta, args, ctx) => {
       const needed = parseAmount(args[0] ?? '');
       const typeName = (args[1] ?? '').trim().toLowerCase();
       const type = typeName.length > 0 ? ARG_TYPES.get(typeName) : undefined;
@@ -252,7 +264,7 @@ export const guards = new Map<string, Guard>([
         };
       }
 
-      if (type && !type.ok(ctx, words[needed - 1]!)) {
+      if (type && !(await type.ok(ctx, words[needed - 1]!))) {
         return {
           ok: false,
           message: `word ${needed} needs to be ${type.describe} !`,

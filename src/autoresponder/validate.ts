@@ -4,6 +4,7 @@ import { generators, RANGE_FORMAT, WEIGHTED_OPTION } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 import { parseColor } from '../embeds.js';
 import { ARG_TYPES } from './guards.js';
+import { USER_TARGET_TAGS } from './placeholders.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
@@ -319,12 +320,23 @@ export function validateTemplate(nodes: Node[]): string[] {
       continue;
     }
 
+    if (USER_TARGET_TAGS.has(node.name)) {
+      checkTargetArg(node.args[0], node.name, errors);
+      continue;
+    }
+
+    if (node.name === 'user.item') {
+      checkTargetArg(node.args[1], 'user.item', errors);
+      continue;
+    }
+
     if (node.name === 'user.itemcount') {
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push(
           '{user.itemcount} needs an item name, like {user.itemcount:fish}',
         );
       }
+      checkTargetArg(node.args[1], 'user.itemcount', errors);
       continue;
     }
 

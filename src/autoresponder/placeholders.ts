@@ -1,7 +1,10 @@
+import type { GuildMember } from 'discord.js';
+
 import { getBalance, getCurrency } from '../economy.js';
 import { getItem, getQuantity, getInventory } from '../items.js';
 
 import type { RenderContext } from './context.js';
+import { resolveMemberArg } from './guards.js';
 
 export type Resolver = (
   ctx: RenderContext,
@@ -21,17 +24,46 @@ function ordinal(n: number): string {
 
 const INVENTORY_LINES = 15;
 
-function balanceOf(ctx: RenderContext): number {
+export const USER_TARGET_TAGS = new Set([
+  'user',
+  'user.name',
+  'user.nickname',
+  'user.id',
+  'user.avatar',
+  'user.joinedat',
+  'user.createdat',
+  'user.displaycolor',
+  'user.boostsince',
+  'user.balance',
+  'user.inventory',
+]);
+
+async function memberOf(
+  ctx: RenderContext,
+  target: string | undefined,
+): Promise<GuildMember> {
+  const raw = (target ?? '').trim();
+  if (raw.length === 0) return ctx.member;
+
+  const member = await resolveMemberArg(ctx, raw);
+  if (!member) throw new Error(`no member: ${raw}`);
+  return member;
+}
+
+function balanceOf(ctx: RenderContext, userId: string): number {
   return (
-    getBalance(ctx.guild.id, ctx.member.id) +
-    (ctx.pending?.balanceDelta(ctx.member.id) ?? 0)
+    getBalance(ctx.guild.id, userId) + (ctx.pending?.balanceDelta(userId) ?? 0)
   );
 }
 
-function quantityOf(ctx: RenderContext, itemKey: string): number {
+function quantityOf(
+  ctx: RenderContext,
+  userId: string,
+  itemKey: string,
+): number {
   return (
-    getQuantity(ctx.guild.id, ctx.member.id, itemKey) +
-    (ctx.pending?.itemDelta(ctx.member.id, itemKey) ?? 0)
+    getQuantity(ctx.guild.id, userId, itemKey) +
+    (ctx.pending?.itemDelta(userId, itemKey) ?? 0)
   );
 }
 
@@ -45,49 +77,68 @@ function itemLine(
 
 export const placeholders = new Map<string, Resolver>([
   ['newline', () => '\n'],
-  ['user', (ctx) => ctx.member.toString()],
-  ['user.name', (ctx) => ctx.member.user.username],
-  ['user.nickname', (ctx) => ctx.member.displayName],
-  ['user.id', (ctx) => ctx.member.id],
-  ['user.avatar', (ctx) => ctx.member.displayAvatarURL()],
+  ['user', async (ctx, args) => (await memberOf(ctx, args[0])).toString()],
+  [
+    'user.name',
+    async (ctx, args) => (await memberOf(ctx, args[0])).user.username,
+  ],
+  [
+    'user.nickname',
+    async (ctx, args) => (await memberOf(ctx, args[0])).displayName,
+  ],
+  ['user.id', async (ctx, args) => (await memberOf(ctx, args[0])).id],
+  [
+    'user.avatar',
+    async (ctx, args) => (await memberOf(ctx, args[0])).displayAvatarURL(),
+  ],
   [
     'user.joinedat',
-    (ctx) => {
-      const joined = ctx.member.joinedTimestamp;
+    async (ctx, args) => {
+      const joined = (await memberOf(ctx, args[0])).joinedTimestamp;
       if (joined === null) throw new Error('no join date');
       return discordTimestamp(joined);
     },
   ],
   [
     'user.createdat',
-    (ctx) => discordTimestamp(ctx.member.user.createdTimestamp),
+    async (ctx, args) =>
+      discordTimestamp((await memberOf(ctx, args[0])).user.createdTimestamp),
   ],
-  ['user.displaycolor', (ctx) => ctx.member.displayHexColor],
+  [
+    'user.displaycolor',
+    async (ctx, args) => (await memberOf(ctx, args[0])).displayHexColor,
+  ],
   [
     'user.boostsince',
-    (ctx) => {
-      const since = ctx.member.premiumSinceTimestamp;
+    async (ctx, args) => {
+      const since = (await memberOf(ctx, args[0])).premiumSinceTimestamp;
       return since ? discordTimestamp(since) : 'not a booster';
     },
   ],
   [
     'user.item',
-    (ctx, args) => {
+    async (ctx, args) => {
       const name = (args[0] ?? '').trim();
       if (name.length === 0) throw new Error('item needs a name');
 
       const item = getItem(ctx.guild.id, name);
       if (!item) throw new Error(`no item: ${name}`);
 
-      return itemLine(item.emoji, item.name, quantityOf(ctx, item.nameKey));
+      const member = await memberOf(ctx, args[1]);
+      return itemLine(
+        item.emoji,
+        item.name,
+        quantityOf(ctx, member.id, item.nameKey),
+      );
     },
   ],
   [
     'user.inventory',
-    (ctx) => {
-      let entries = getInventory(ctx.guild.id, ctx.member.id);
+    async (ctx, args) => {
+      const member = await memberOf(ctx, args[0]);
+      let entries = getInventory(ctx.guild.id, member.id);
 
-      const deltas = ctx.pending?.itemDeltas(ctx.member.id);
+      const deltas = ctx.pending?.itemDeltas(member.id);
       if (deltas && deltas.size > 0) {
         const byKey = new Map(
           entries.map((entry) => [entry.item.nameKey, entry]),
@@ -121,14 +172,15 @@ export const placeholders = new Map<string, Resolver>([
   ],
   [
     'user.itemcount',
-    (ctx, args) => {
+    async (ctx, args) => {
       const name = (args[0] ?? '').trim();
       if (name.length === 0) throw new Error('itemcount needs an item');
 
       const item = getItem(ctx.guild.id, name);
       if (!item) throw new Error(`no item: ${name}`);
 
-      return quantityOf(ctx, item.nameKey).toLocaleString('en-US');
+      const member = await memberOf(ctx, args[1]);
+      return quantityOf(ctx, member.id, item.nameKey).toLocaleString('en-US');
     },
   ],
   ['channel', (ctx) => ctx.channel.toString()],
@@ -164,7 +216,11 @@ export const placeholders = new Map<string, Resolver>([
     },
   ],
   ['server.membercount', (ctx) => ctx.guild.memberCount.toString()],
-  ['user.balance', (ctx) => balanceOf(ctx).toLocaleString('en-US')],
+  [
+    'user.balance',
+    async (ctx, args) =>
+      balanceOf(ctx, (await memberOf(ctx, args[0])).id).toLocaleString('en-US'),
+  ],
   ['server.currency', (ctx) => getCurrency(ctx.guild.id).name],
   ['server.currencyemoji', (ctx) => getCurrency(ctx.guild.id).emoji],
 ]);
