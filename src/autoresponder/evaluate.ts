@@ -12,7 +12,11 @@ import {
 import { colors } from '../style.js';
 import type { Node } from './ast.js';
 import { parse } from './parser.js';
-import type { RenderContext, EvalMeta } from './context.js';
+import {
+  PendingEffects,
+  type RenderContext,
+  type EvalMeta,
+} from './context.js';
 import { generators } from './generators.js';
 import { placeholders } from './placeholders.js';
 import {
@@ -21,7 +25,7 @@ import {
   resolveRoleArg,
   userIdOf,
 } from './guards.js';
-import { effects, EffectError } from './effects.js';
+import { effects, pendingOf, EffectError } from './effects.js';
 import { getCooldownRemaining, setCooldown } from './cooldowns.js';
 import {
   interpolateArgs,
@@ -159,6 +163,9 @@ export async function evaluate(
     userId: ctx.member.id,
     triggerKey,
   };
+
+  const pending = new PendingEffects();
+  ctx.pending = pending;
 
   const captures = new Map<string, string>();
   const captureIndices = new Map<string, number>();
@@ -362,6 +369,12 @@ export async function evaluate(
 
     if (effects.has(node.name)) {
       queuedEffects.push({ name: node.name, args });
+      const delta = pendingOf(node.name, meta, args);
+      if (delta?.kind === 'balance') {
+        pending.addBalance(delta.userId, delta.delta);
+      } else if (delta?.kind === 'item') {
+        pending.addItem(delta.userId, delta.itemKey, delta.delta);
+      }
       continue;
     }
 

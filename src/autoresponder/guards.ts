@@ -52,7 +52,7 @@ export function userIdOf(raw: string): string | null {
 export const guards = new Map<string, Guard>([
   [
     'requirebal',
-    (meta, args) => {
+    (meta, args, ctx) => {
       const amount = parseAmount(args[0] ?? '');
       if (amount === null || amount <= 0) {
         return {
@@ -61,7 +61,9 @@ export const guards = new Map<string, Guard>([
         };
       }
 
-      const balance = getBalance(meta.guildId, meta.userId);
+      const balance =
+        getBalance(meta.guildId, meta.userId) +
+        (ctx.pending?.balanceDelta(meta.userId) ?? 0);
       if (balance >= amount) return { ok: true };
 
       const currency = getCurrency(meta.guildId);
@@ -73,7 +75,7 @@ export const guards = new Map<string, Guard>([
   ],
   [
     'requireitem',
-    (meta, args) => {
+    (meta, args, ctx) => {
       const name = args[0] ?? '';
       const quantity = args.length > 1 ? parseAmount(args[1] ?? '') : 1;
       if (name.length === 0 || quantity === null || quantity <= 0) {
@@ -91,7 +93,9 @@ export const guards = new Map<string, Guard>([
         };
       }
 
-      const have = getQuantity(meta.guildId, meta.userId, name);
+      const have =
+        getQuantity(meta.guildId, meta.userId, name) +
+        (ctx.pending?.itemDelta(meta.userId, item.nameKey) ?? 0);
       if (have >= quantity) return { ok: true };
 
       return {

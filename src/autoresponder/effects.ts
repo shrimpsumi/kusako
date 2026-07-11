@@ -13,6 +13,33 @@ function targetIdOf(meta: EvalMeta, arg: string | undefined): string | null {
   return raw.length > 0 ? userIdOf(raw) : meta.userId;
 }
 
+export type PendingDelta =
+  | { kind: 'balance'; userId: string; delta: number }
+  | { kind: 'item'; userId: string; itemKey: string; delta: number };
+
+export function pendingOf(
+  name: string,
+  meta: EvalMeta,
+  args: string[],
+): PendingDelta | null {
+  if (name === 'modifybal') {
+    const amount = parseAmount(args[0] ?? '');
+    const targetId = targetIdOf(meta, args[1]);
+    if (amount === null || !targetId) return null;
+    return { kind: 'balance', userId: targetId, delta: amount };
+  }
+
+  if (name === 'modifyinv') {
+    const delta = parseAmount(args[1] ?? '');
+    const targetId = targetIdOf(meta, args[2]);
+    const item = getItem(meta.guildId, args[0] ?? '');
+    if (delta === null || !targetId || !item) return null;
+    return { kind: 'item', userId: targetId, itemKey: item.nameKey, delta };
+  }
+
+  return null;
+}
+
 export const effects = new Map<string, Effect>([
   [
     'modifybal',

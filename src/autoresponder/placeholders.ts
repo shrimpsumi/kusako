@@ -21,6 +21,20 @@ function ordinal(n: number): string {
 
 const INVENTORY_LINES = 15;
 
+function balanceOf(ctx: RenderContext): number {
+  return (
+    getBalance(ctx.guild.id, ctx.member.id) +
+    (ctx.pending?.balanceDelta(ctx.member.id) ?? 0)
+  );
+}
+
+function quantityOf(ctx: RenderContext, itemKey: string): number {
+  return (
+    getQuantity(ctx.guild.id, ctx.member.id, itemKey) +
+    (ctx.pending?.itemDelta(ctx.member.id, itemKey) ?? 0)
+  );
+}
+
 function itemLine(
   emoji: string | null,
   name: string,
@@ -65,14 +79,33 @@ export const placeholders = new Map<string, Resolver>([
       const item = getItem(ctx.guild.id, name);
       if (!item) throw new Error(`no item: ${name}`);
 
-      const quantity = getQuantity(ctx.guild.id, ctx.member.id, name);
-      return itemLine(item.emoji, item.name, quantity);
+      return itemLine(item.emoji, item.name, quantityOf(ctx, item.nameKey));
     },
   ],
   [
     'user.inventory',
     (ctx) => {
-      const entries = getInventory(ctx.guild.id, ctx.member.id);
+      let entries = getInventory(ctx.guild.id, ctx.member.id);
+
+      const deltas = ctx.pending?.itemDeltas(ctx.member.id);
+      if (deltas && deltas.size > 0) {
+        const byKey = new Map(
+          entries.map((entry) => [entry.item.nameKey, entry]),
+        );
+        for (const [itemKey, delta] of deltas) {
+          const existing = byKey.get(itemKey);
+          if (existing) {
+            existing.quantity += delta;
+          } else if (delta > 0) {
+            const item = getItem(ctx.guild.id, itemKey);
+            if (item) byKey.set(itemKey, { item, quantity: delta });
+          }
+        }
+        entries = [...byKey.values()]
+          .filter((entry) => entry.quantity > 0)
+          .sort((a, b) => a.item.nameKey.localeCompare(b.item.nameKey));
+      }
+
       if (entries.length === 0) return 'nothing yet...';
 
       const lines = entries
@@ -95,9 +128,7 @@ export const placeholders = new Map<string, Resolver>([
       const item = getItem(ctx.guild.id, name);
       if (!item) throw new Error(`no item: ${name}`);
 
-      return getQuantity(ctx.guild.id, ctx.member.id, name).toLocaleString(
-        'en-US',
-      );
+      return quantityOf(ctx, item.nameKey).toLocaleString('en-US');
     },
   ],
   ['channel', (ctx) => ctx.channel.toString()],
@@ -133,10 +164,7 @@ export const placeholders = new Map<string, Resolver>([
     },
   ],
   ['server.membercount', (ctx) => ctx.guild.memberCount.toString()],
-  [
-    'user.balance',
-    (ctx) => getBalance(ctx.guild.id, ctx.member.id).toLocaleString('en-US'),
-  ],
+  ['user.balance', (ctx) => balanceOf(ctx).toLocaleString('en-US')],
   ['server.currency', (ctx) => getCurrency(ctx.guild.id).name],
   ['server.currencyemoji', (ctx) => getCurrency(ctx.guild.id).emoji],
 ]);
