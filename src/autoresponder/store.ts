@@ -178,3 +178,71 @@ export function removeEventResponder(
 
   return result.changes > 0;
 }
+
+const LEVEL_KEY_PREFIX = 'event:level:';
+
+export function levelTriggerKey(level: number): string {
+  return `${LEVEL_KEY_PREFIX}${level}`;
+}
+
+export function setLevelResponder(
+  guildId: string,
+  level: number,
+  response: string,
+): void {
+  const now = Date.now();
+  const triggerKey = levelTriggerKey(level);
+  db()
+    .prepare(
+      `INSERT INTO autoresponders
+        (guild_id, trigger, trigger_key, response, match_mode, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'event', ?, ?)
+       ON CONFLICT (guild_id, trigger_key)
+       DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at`,
+    )
+    .run(guildId, triggerKey, triggerKey, response, now, now);
+}
+
+export function getLevelResponder(
+  guildId: string,
+  level: number,
+): Autoresponder | null {
+  const row = db()
+    .prepare(
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .get(guildId, levelTriggerKey(level)) as Row | undefined;
+
+  return row ? toModel(row) : null;
+}
+
+export function removeLevelResponder(guildId: string, level: number): boolean {
+  const result = db()
+    .prepare(
+      `DELETE FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .run(guildId, levelTriggerKey(level));
+
+  return result.changes > 0;
+}
+
+export function listLevelResponders(
+  guildId: string,
+): Array<{ level: number; responder: Autoresponder }> {
+  const rows = db()
+    .prepare(
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND match_mode = 'event' AND trigger_key LIKE ?`,
+    )
+    .all(guildId, `${LEVEL_KEY_PREFIX}%`) as Row[];
+
+  return rows
+    .map((row) => ({
+      level: Number(row.trigger_key.slice(LEVEL_KEY_PREFIX.length)),
+      responder: toModel(row),
+    }))
+    .filter((entry) => Number.isSafeInteger(entry.level))
+    .sort((a, b) => a.level - b.level);
+}
