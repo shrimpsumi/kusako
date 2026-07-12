@@ -6,6 +6,16 @@ import { matchesTrigger, extractArgs } from '../autoresponder/matcher.js';
 import { parse } from '../autoresponder/parser.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
+import {
+  isLevelingEnabled,
+  levelFromXp,
+  modifyXp,
+  XP_MIN,
+  XP_MAX,
+  XP_COOLDOWN_SECONDS,
+} from '../levels.js';
+import { getGameCooldownRemaining, setGameCooldown } from '../games.js';
+import { fireLevelUps } from '../levelups.js';
 import { logger } from '../logger.js';
 
 export function registerMessageCreate(client: SakoClient): void {
@@ -13,6 +23,35 @@ export function registerMessageCreate(client: SakoClient): void {
     if (message.author.bot) return;
     if (!message.inGuild()) return;
     if (!message.member) return;
+
+    if (
+      isLevelingEnabled(message.guildId) &&
+      getGameCooldownRemaining(message.guildId, 'xp', message.author.id) === 0
+    ) {
+      try {
+        const gain = XP_MIN + Math.floor(Math.random() * (XP_MAX - XP_MIN + 1));
+        const result = modifyXp(message.guildId, message.author.id, gain);
+        setGameCooldown(
+          message.guildId,
+          'xp',
+          message.author.id,
+          XP_COOLDOWN_SECONDS,
+        );
+
+        if (result.ok) {
+          const from = levelFromXp(result.xp - gain);
+          const to = levelFromXp(result.xp);
+          if (to > from) {
+            await fireLevelUps(message.member, message.channel, from, to);
+          }
+        }
+      } catch (err) {
+        logger.error(
+          { err, guild: message.guildId, user: message.author.id },
+          'xp grant failed',
+        );
+      }
+    }
 
     const responders = listAutoresponders(message.guildId);
     if (responders.length === 0) return;
