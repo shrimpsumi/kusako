@@ -113,6 +113,14 @@ CREATE TABLE IF NOT EXISTS shop_listings (
     ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS game_cooldowns (
+  guild_id TEXT NOT NULL,
+  game TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, game, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS embeds (
   guild_id TEXT NOT NULL,
   name TEXT NOT NULL,
