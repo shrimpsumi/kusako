@@ -113,6 +113,14 @@ CREATE TABLE IF NOT EXISTS shop_listings (
     ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS levels (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  xp INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS game_cooldowns (
   guild_id TEXT NOT NULL,
   game TEXT NOT NULL,
