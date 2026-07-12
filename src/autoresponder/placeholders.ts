@@ -5,6 +5,7 @@ import { getItem, getQuantity, getInventory } from '../items.js';
 
 import type { RenderContext } from './context.js';
 import { resolveMemberArg } from './guards.js';
+import { getXp, levelFromXp } from '../levels.js';
 
 export type Resolver = (
   ctx: RenderContext,
@@ -36,6 +37,8 @@ export const USER_TARGET_TAGS = new Set([
   'user.boostsince',
   'user.balance',
   'user.inventory',
+  'user.level',
+  'user.xp',
 ]);
 
 async function memberOf(
@@ -220,6 +223,20 @@ export const placeholders = new Map<string, Resolver>([
     'user.balance',
     async (ctx, args) =>
       balanceOf(ctx, (await memberOf(ctx, args[0])).id).toLocaleString('en-US'),
+  ],
+  [
+    'user.level',
+    async (ctx, args) =>
+      levelFromXp(
+        getXp(ctx.guild.id, (await memberOf(ctx, args[0])).id),
+      ).toString(),
+  ],
+  [
+    'user.xp',
+    async (ctx, args) =>
+      getXp(ctx.guild.id, (await memberOf(ctx, args[0])).id).toLocaleString(
+        'en-US',
+      ),
   ],
   ['server.currency', (ctx) => getCurrency(ctx.guild.id).name],
   ['server.currencyemoji', (ctx) => getCurrency(ctx.guild.id).emoji],
