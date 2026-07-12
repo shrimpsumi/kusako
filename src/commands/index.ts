@@ -12,6 +12,9 @@ import { embeds } from './embeds.js';
 import { events } from './events.js';
 import { shop } from './shop.js';
 import { pat } from './pat.js';
+import { levels } from './levels.js';
+import { level } from './level.js';
+import { modifylevel } from './modifylevel.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -26,4 +29,7 @@ export const commands: SlashCommand[] = [
   events,
   shop,
   pat,
+  levels,
+  level,
+  modifylevel,
 ];
