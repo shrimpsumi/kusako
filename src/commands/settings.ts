@@ -8,6 +8,7 @@ import {
   isGameEnabled,
   setGameEnabled,
 } from '../games.js';
+import { isLevelingEnabled, setLevelingEnabled } from '../levels.js';
 import { formatDuration } from '../autoresponder/args.js';
 import { serverEmbed } from '../style.js';
 
@@ -78,6 +79,22 @@ export const settings: SlashCommand = {
                 .setDescription('turn /pat on or off for this server'),
             ),
         ),
+    )
+    .addSubcommandGroup((group) =>
+      group
+        .setName('levels')
+        .setDescription('leveling system settings')
+        .addSubcommand((sub) =>
+          sub
+            .setName('set')
+            .setDescription('turn leveling on or off (off by default)')
+            .addBooleanOption((o) =>
+              o
+                .setName('enabled')
+                .setDescription('should members earn xp in this server?')
+                .setRequired(true),
+            ),
+        ),
     ) as SlashCommandBuilder,
 
   async execute(interaction) {
@@ -110,6 +127,11 @@ export const settings: SlashCommand = {
           {
             name: 'head pats',
             value: patValue,
+            inline: true,
+          },
+          {
+            name: 'leveling',
+            value: isLevelingEnabled(guildId) ? 'on' : 'off',
             inline: true,
           },
         );
@@ -174,6 +196,22 @@ export const settings: SlashCommand = {
         .setTitle('✦ head pats updated !')
         .setDescription(
           `reward: ${currency.emoji} **${now.minReward.toLocaleString('en-US')}-${now.maxReward.toLocaleString('en-US')} ${currency.name}**, cooldown: **${formatDuration(now.cooldownSeconds)}**, pats are **${state}** !`,
+        );
+
+      await interaction.reply({ embeds: [embed] });
+      return;
+    }
+
+    if (group === 'levels' && sub === 'set') {
+      const enabled = interaction.options.getBoolean('enabled', true);
+      setLevelingEnabled(guildId, enabled);
+
+      const embed = serverEmbed(interaction.guild)
+        .setTitle('✦ leveling updated !')
+        .setDescription(
+          enabled
+            ? 'leveling is **on** ! members earn xp by chatting now c:'
+            : 'leveling is **off** ! xp is kept safe, nobody earns any for now',
         );
 
       await interaction.reply({ embeds: [embed] });
