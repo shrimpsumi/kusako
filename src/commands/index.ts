@@ -15,6 +15,7 @@ import { pat } from './pat.js';
 import { levels } from './levels.js';
 import { level } from './level.js';
 import { modifylevel } from './modifylevel.js';
+import { send } from './send.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -32,4 +33,5 @@ export const commands: SlashCommand[] = [
   levels,
   level,
   modifylevel,
+  send,
 ];
