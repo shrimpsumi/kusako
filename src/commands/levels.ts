@@ -14,7 +14,7 @@ import {
 } from '../autoresponder/store.js';
 import { templateIssues } from '../autoresponder/validate.js';
 import { isLevelingEnabled, MAX_LEVEL } from '../levels.js';
-import { serverEmbed } from '../style.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 
 const RESPONSE_MAX = 2000;
 
@@ -26,9 +26,7 @@ export const levels: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('set')
-        .setDescription(
-          'set the reply for reaching a level (replaces the old one)',
-        )
+        .setDescription('set the reply for reaching a level')
         .addIntegerOption((o) =>
           o
             .setName('level')
@@ -94,7 +92,7 @@ export const levels: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'levels only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

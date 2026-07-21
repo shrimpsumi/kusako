@@ -6,7 +6,7 @@ import {
 
 import type { SlashCommand } from '../client.js';
 import { getItem, modifyInventory, setInventory } from '../items.js';
-import { serverEmbed } from '../style.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 import { respondWithItemNames } from './items.js';
 
 const NAME_MAX = 50;
@@ -34,7 +34,7 @@ export const modifyinventory: SlashCommand = {
         .addIntegerOption((o) =>
           o
             .setName('amount')
-            .setDescription('how many (default 1)')
+            .setDescription('how many')
             .setMinValue(1)
             .setRequired(false),
         ),
@@ -57,7 +57,7 @@ export const modifyinventory: SlashCommand = {
         .addIntegerOption((o) =>
           o
             .setName('amount')
-            .setDescription('how many (default 1)')
+            .setDescription('how many')
             .setMinValue(1)
             .setRequired(false),
         ),
@@ -91,7 +91,7 @@ export const modifyinventory: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'inventories only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

@@ -5,7 +5,7 @@ import { parse } from '../autoresponder/parser.js';
 import { templateIssues } from '../autoresponder/validate.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
-import { userEmbed } from '../style.js';
+import { userEmbed, NO_DMS } from '../style.js';
 
 const MESSAGE_MAX = 2000;
 
@@ -35,7 +35,7 @@ export const send: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'i can only send things inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

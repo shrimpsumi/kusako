@@ -8,7 +8,7 @@ import {
   isLevelingEnabled,
   MAX_LEVEL,
 } from '../levels.js';
-import { userEmbed } from '../style.js';
+import { userEmbed, NO_DMS } from '../style.js';
 
 export const level: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ export const level: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'levels only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

@@ -1,8 +1,10 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, inlineCode } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getBalance, getCurrency } from '../economy.js';
-import { userEmbed } from '../style.js';
+import { userEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../style.js';
+
+const NO_BUFF = '-# ₊˚⊹ nothing boosting...';
 
 export const balance: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -18,24 +20,51 @@ export const balance: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'balances only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
 
     const target = interaction.options.getUser('user') ?? interaction.user;
+    const targetMember =
+      target.id === interaction.user.id
+        ? interaction.member
+        : interaction.options.getMember('user');
+    const nickname = targetMember?.displayName ?? target.displayName;
+
     const currency = getCurrency(interaction.guildId);
     const amount = getBalance(interaction.guildId, target.id);
-    const pretty = `${currency.emoji} **${amount.toLocaleString('en-US')} ${currency.name}**`;
+
+    const server = [
+      '꒰ server ꒱',
+      `${currency.emoji} **${amount.toLocaleString('en-US')}** ${currency.name}`,
+      NO_BUFF,
+    ].join('\n');
+
+    const everywhere = [
+      '꒰ everywhere ꒱',
+      '📦 **0** thingies',
+      NO_BUFF,
+      '📦 **0** doodadas',
+      NO_BUFF,
+    ].join('\n');
+
+    const stash = [
+      '⊹ ࣪ ˖ **global stash** ˖ ࣪ ⊹',
+      '-# here be... nothing!',
+    ].join('\n');
 
     const embed = userEmbed(target)
-      .setTitle('✧･ﾟ balance !')
-      .setDescription(
-        target.id === interaction.user.id
-          ? `you have ${pretty} !`
-          : `${target.displayName} has ${pretty} !`,
-      );
+      .setAuthor({
+        name: `${nickname}'s pockets`,
+        iconURL: target.displayAvatarURL(),
+      })
+      .setDescription([server, everywhere, stash].join('\n\n'))
+      .setImage(SPACER_IMAGE)
+      .setFooter({
+        text: `server items live in /inventory !`,
+      });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({ embeds: [embed], files: [spacerFile()] });
   },
 };

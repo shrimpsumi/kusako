@@ -62,7 +62,7 @@ export function getItem(guildId: string, name: string): Item | null {
 
 export function listItems(guildId: string): Item[] {
   const rows = db()
-    .prepare('SELECT * FROM items WHERE guild_id = ? ORDER BY name_key')
+    .prepare('SELECT * FROM items WHERE guild_id = ? ORDER BY created_at')
     .all(guildId) as ItemRow[];
 
   return rows.map(toItem);

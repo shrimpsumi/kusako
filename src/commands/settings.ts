@@ -10,7 +10,7 @@ import {
 } from '../games.js';
 import { isLevelingEnabled, setLevelingEnabled } from '../levels.js';
 import { formatDuration } from '../autoresponder/args.js';
-import { serverEmbed } from '../style.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 
 export const settings: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -55,21 +55,21 @@ export const settings: SlashCommand = {
             .addIntegerOption((o) =>
               o
                 .setName('min')
-                .setDescription('smallest reward per pat (default 30)')
+                .setDescription('smallest reward per pat')
                 .setMinValue(1)
                 .setMaxValue(1_000_000),
             )
             .addIntegerOption((o) =>
               o
                 .setName('max')
-                .setDescription('biggest reward per pat (default 60)')
+                .setDescription('biggest reward per pat')
                 .setMinValue(1)
                 .setMaxValue(1_000_000),
             )
             .addIntegerOption((o) =>
               o
                 .setName('cooldown')
-                .setDescription('minutes between pats (default 60)')
+                .setDescription('minutes between pats')
                 .setMinValue(1)
                 .setMaxValue(10_080),
             )
@@ -87,7 +87,7 @@ export const settings: SlashCommand = {
         .addSubcommand((sub) =>
           sub
             .setName('set')
-            .setDescription('turn leveling on or off (off by default)')
+            .setDescription('turn leveling on or off')
             .addBooleanOption((o) =>
               o
                 .setName('enabled')
@@ -100,7 +100,7 @@ export const settings: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'settings only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

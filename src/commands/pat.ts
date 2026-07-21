@@ -9,7 +9,7 @@ import {
   isGameEnabled,
 } from '../games.js';
 import { formatDuration } from '../autoresponder/args.js';
-import { userEmbed } from '../style.js';
+import { userEmbed, NO_DMS } from '../style.js';
 
 const LINES = [
   'thank u for the pats!! here, take {{pay}} ٤:',
@@ -26,7 +26,7 @@ export const pat: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'you can only pat me inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

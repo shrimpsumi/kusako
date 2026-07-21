@@ -32,7 +32,7 @@ import {
   type EmbedData,
   type EmbedRecord,
 } from '../embeds.js';
-import { colors } from '../style.js';
+import { colors, NO_DMS } from '../style.js';
 
 const NAME_MAX = 50;
 const JSON_MAX = 6000;
@@ -255,7 +255,7 @@ function panelPayload(record: EmbedRecord) {
   const { embed, hidden } = previewOf(record.data);
   const note =
     hidden.length > 0
-      ? `\n-# ${hidden.join(', ')} hidden in preview — placeholder urls resolve when it sends !`
+      ? `\n-# ${hidden.join(', ')} hidden in preview,, placeholder urls resolve when it sends !`
       : '';
 
   return {
@@ -435,7 +435,7 @@ export const embeds: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('name')
-            .setDescription('the embed name (also its id, case insensitive)')
+            .setDescription('the embed name')
             .setMaxLength(NAME_MAX)
             .setRequired(true),
         ),
@@ -468,9 +468,7 @@ export const embeds: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('json')
-            .setDescription(
-              'embed json (bare embed or {"embeds":[...]} both work)',
-            )
+            .setDescription('the embed json')
             .setMaxLength(JSON_MAX)
             .setRequired(true),
         ),
@@ -510,7 +508,7 @@ export const embeds: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inGuild()) {
       await interaction.reply({
-        content: 'embeds only work inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
@@ -602,7 +600,7 @@ export const embeds: SlashCommand = {
       await interaction.reply({
         content:
           hidden.length > 0
-            ? `-# ${hidden.join(', ')} hidden in preview — placeholder urls resolve when it sends !`
+            ? `-# ${hidden.join(', ')} hidden in preview,, placeholder urls resolve when it sends !`
             : undefined,
         embeds: [embed],
       });

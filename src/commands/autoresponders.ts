@@ -17,6 +17,73 @@ import {
   type MatchMode,
 } from '../autoresponder/store.js';
 import { templateIssues } from '../autoresponder/validate.js';
+import { parse } from '../autoresponder/parser.js';
+import { parseAmount, formatDuration } from '../autoresponder/args.js';
+import type { PlaceholderNode } from '../autoresponder/ast.js';
+import { serverEmbed, NO_DMS } from '../style.js';
+
+const LIST_ROW_MAX = 40;
+const LIST_CHAR_BUDGET = 3800;
+
+function channelBadge(arg: string): string {
+  const trimmed = arg.trim();
+  if (/^<#\d+>$/.test(trimmed)) return trimmed;
+  if (/^\d+$/.test(trimmed)) return `<#${trimmed}>`;
+  return `#${trimmed.replace(/^#/, '')}`;
+}
+
+function templateTraits(response: string): {
+  badges: string[];
+  cooldown: string | null;
+  does: string[];
+} {
+  const nodes = parse(response).filter(
+    (node): node is PlaceholderNode => node.kind === 'placeholder',
+  );
+  const has = (name: string) => nodes.some((node) => node.name === name);
+
+  let cooldown: string | null = null;
+  const cooldownNode = nodes.find((node) => node.name === 'cooldown');
+  if (cooldownNode) {
+    const seconds = parseAmount(cooldownNode.args[0] ?? '');
+    cooldown =
+      seconds !== null && seconds > 0 ? formatDuration(seconds) : 'dynamic';
+  }
+
+  const sendNode = nodes.find((node) => node.name === 'send');
+  const sendTo = sendNode ? channelBadge(sendNode.args[0] ?? '') : null;
+
+  const badges: string[] = [];
+  const does: string[] = [];
+  if (has('modifybal')) {
+    badges.push('currency');
+    does.push('moves currency');
+  }
+  if (has('modifyinv')) {
+    badges.push('items');
+    does.push('moves items');
+  }
+  if (has('giverole') || has('takerole')) {
+    badges.push('roles');
+    does.push('gives or takes roles');
+  }
+  if (cooldown) badges.push(`${cooldown} cooldown`);
+  if (has('silent')) {
+    badges.push('silent');
+    does.push('fails silently');
+  }
+  if (has('dm')) {
+    badges.push('dms');
+    does.push('replies in dms');
+  }
+  if (sendTo) {
+    badges.push(`→ ${sendTo}`);
+    does.push(`sends to ${sendTo}`);
+  }
+  if (has('deletetrigger')) does.push('deletes the trigger');
+
+  return { badges, cooldown, does };
+}
 
 const TRIGGER_MAX = 100;
 const RESPONSE_MAX = 2000;
@@ -154,9 +221,9 @@ export const autoresponders: SlashCommand = {
   autocomplete: respondWithTriggers,
 
   async execute(interaction) {
-    if (!interaction.inGuild()) {
+    if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'autoresponders only work inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
@@ -243,12 +310,43 @@ export const autoresponders: SlashCommand = {
 
     if (sub === 'list') {
       const all = listAutoresponders(guildId);
+      const embed = serverEmbed(interaction.guild).setTitle(
+        `✦ autoresponders (${all.length})`,
+      );
 
-      await interaction.reply({
-        content: all.length
-          ? `**autoresponders (${all.length}):**\n${all.map((a) => `• ${inlineCode(a.trigger)}${a.matchMode === 'exact' ? '' : ` (${a.matchMode})`}`).join('\n')}`
-          : 'no autoresponders set up yet. add one with /autoresponders add!',
-      });
+      if (all.length === 0) {
+        embed.setDescription(
+          `no autoresponders yet,, make your first with ${inlineCode('/autoresponders add')}`,
+        );
+        await interaction.reply({ embeds: [embed] });
+        return;
+      }
+
+      const rows: string[] = [];
+      let used = 0;
+      for (const responder of all) {
+        const row = [
+          inlineCode(responder.trigger),
+          responder.matchMode,
+          ...templateTraits(responder.response).badges,
+        ].join(' · ');
+        if (
+          rows.length >= LIST_ROW_MAX ||
+          used + row.length + 1 > LIST_CHAR_BUDGET
+        ) {
+          break;
+        }
+        rows.push(row);
+        used += row.length + 1;
+      }
+
+      embed
+        .setDescription(
+          `${rows.join('\n')}\n\n-# see one up close with ${inlineCode('/autoresponders show')}`,
+        )
+        .setFooter({ text: `${rows.length} of ${all.length} shown` });
+
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
@@ -256,11 +354,40 @@ export const autoresponders: SlashCommand = {
       const trigger = interaction.options.getString('trigger', true);
       const found = getAutoresponder(guildId, trigger);
 
-      await interaction.reply({
-        content: found
-          ? `**${inlineCode(found.trigger)}** (${found.matchMode}) replies with:\n${codeBlock(found.response)}`
-          : `no autoresponder for ${inlineCode(trigger)} found.`,
-      });
+      if (!found) {
+        await interaction.reply({
+          content: `no autoresponder for ${inlineCode(trigger)} found.`,
+        });
+        return;
+      }
+
+      const traits = templateTraits(found.response);
+      const embed = serverEmbed(interaction.guild)
+        .setTitle(`✦ ${found.trigger}`)
+        .setDescription(
+          `${codeBlock(found.response)}\n-# change matching with ${inlineCode('/autoresponders matchmode')}`,
+        )
+        .addFields({
+          name: 'match mode',
+          value: found.matchMode,
+          inline: true,
+        });
+      if (traits.cooldown) {
+        embed.addFields({
+          name: 'cooldown',
+          value: traits.cooldown,
+          inline: true,
+        });
+      }
+      if (traits.does.length > 0) {
+        embed.addFields({
+          name: 'does',
+          value: traits.does.join('\n'),
+          inline: true,
+        });
+      }
+
+      await interaction.reply({ embeds: [embed] });
       return;
     }
   },

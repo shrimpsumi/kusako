@@ -15,7 +15,7 @@ import {
   purchase,
 } from '../shop.js';
 import { getCurrency } from '../economy.js';
-import { serverEmbed, userEmbed } from '../style.js';
+import { serverEmbed, userEmbed, NO_DMS } from '../style.js';
 
 const NAME_MAX = 50;
 
@@ -46,7 +46,7 @@ async function respondWithShopNames(
 export const shop: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('shop')
-    .setDescription("this server's shop ! spend those hard-earned riches")
+    .setDescription('buy server items here !')
     .addSubcommand((sub) =>
       sub.setName('list').setDescription("everything that's for sale"),
     )
@@ -70,7 +70,7 @@ export const shop: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('item')
-            .setDescription('an existing item (make one with /items create)')
+            .setDescription('an existing item')
             .setMaxLength(NAME_MAX)
             .setRequired(true)
             .setAutocomplete(true),
@@ -85,9 +85,7 @@ export const shop: SlashCommand = {
         .addIntegerOption((o) =>
           o
             .setName('stock')
-            .setDescription(
-              'how many can be bought (0 = unlimited, the default)',
-            )
+            .setDescription('how many can be bought, 0 = unlimited')
             .setMinValue(0)
             .setRequired(false),
         )
@@ -117,7 +115,7 @@ export const shop: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'the shop only exists inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
@@ -137,29 +135,59 @@ export const shop: SlashCommand = {
 
     if (sub === 'list') {
       const entries = listShop(guildId);
+
+      if (entries.length === 0) {
+        const embed = serverEmbed(interaction.guild)
+          .setTitle('oh no... the shop is empty !')
+          .setDescription(
+            `the shelves are all empty,, sako has nothing to sell to you!\n\n-# admins can add items with ${inlineCode('/shop add')}`,
+          );
+
+        await interaction.reply({ embeds: [embed] });
+        return;
+      }
+
       const currency = getCurrency(guildId);
 
-      const lines = entries.map(({ item, listing }) => {
+      const greeting = "꒰^ >ヮ<^꒱ *hiiii! here's what i've got for sale:*";
+      const buyHint = `⁀જ➣ buy with ${inlineCode('/shop buy <item>')}`;
+
+      const blocks: string[] = [];
+      let hidden = 0;
+      for (const { item, listing } of entries) {
         const stock =
           listing.stock === null
-            ? ''
+            ? 'unlimited'
             : listing.stock <= 0
-              ? ' · sold out :c'
-              : ` · ${listing.stock} left`;
-        const role = listing.requiredRoleId
-          ? ` · needs <@&${listing.requiredRoleId}>`
-          : '';
-        const description = item.description ? `\n-# ${item.description}` : '';
-        return `${item.emoji ?? '📦'} **${item.name}** — ${currency.emoji} ${listing.price.toLocaleString('en-US')}${stock}${role}${description}`;
-      });
+              ? 'sold out :c'
+              : `\`${listing.stock}\``;
+        const requires = listing.requiredRoleId
+          ? `<@&${listing.requiredRoleId}>`
+          : 'none';
 
+        const lines = [
+          `ᯓ➤ **${item.name}**  ·  ${currency.emoji} \`${listing.price.toLocaleString('en-US')}\``,
+        ];
+        if (item.description) lines.push(`-# ✧ ${item.description}`);
+        lines.push(`-# ✧ stock: ${stock} ━ requires: ${requires}`);
+        const block = lines.join('\n');
+
+        const projected = [greeting, ...blocks, block, buyHint].join('\n\n');
+        if (projected.length > 4096) {
+          hidden = entries.length - blocks.length;
+          break;
+        }
+        blocks.push(block);
+      }
+
+      const description = [greeting, ...blocks, buyHint].join('\n\n');
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ the shop !')
-        .setDescription(
-          lines.length
-            ? lines.join('\n')
-            : `nothing for sale yet... admins can stock the shelves with ${inlineCode('/shop add')} c:`,
-        );
+        .setDescription(description)
+        .setFooter({
+          text: hidden
+            ? `page 1 of 1 ━━━ ${hidden} more didn't fit`
+            : 'page 1 of 1 ━━━ use the arrows to browse',
+        });
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -181,7 +209,7 @@ export const shop: SlashCommand = {
         if (!role) {
           await interaction.reply({
             content:
-              "that listing needs a role that doesn't exist anymore... poke an admin !",
+              "that listing needs a role that doesn't exist anymore... tell an admin !",
           });
           return;
         }
@@ -236,7 +264,7 @@ export const shop: SlashCommand = {
       const item = getItem(guildId, name);
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} ! make it first with ${inlineCode('/items create')} c:`,
+          content: `there's no item called ${inlineCode(name)} ! make it first with ${inlineCode('/items create')}`,
         });
         return;
       }

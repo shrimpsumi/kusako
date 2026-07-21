@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, modifyBalance, setBalance } from '../economy.js';
-import { serverEmbed } from '../style.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 
 export const modifybalance: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -58,7 +58,7 @@ export const modifybalance: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'balances only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

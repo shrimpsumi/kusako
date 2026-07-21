@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getInventory } from '../items.js';
-import { userEmbed } from '../style.js';
+import { userEmbed, NO_DMS } from '../style.js';
 
 export const inventory: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('inventory')
-    .setDescription('see what you (or someone else) are carrying !')
+    .setDescription("see what you're carrying !")
     .addUserOption((o) =>
       o
         .setName('user')
@@ -18,7 +18,7 @@ export const inventory: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'inventories only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

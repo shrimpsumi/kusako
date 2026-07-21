@@ -15,7 +15,7 @@ import {
   MAX_LEVEL,
 } from '../levels.js';
 import { fireLevelUps } from '../levelups.js';
-import { serverEmbed } from '../style.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 
 function userOption(o: SlashCommandUserOption): SlashCommandUserOption {
   return o.setName('user').setDescription('whose levels').setRequired(true);
@@ -102,7 +102,7 @@ export const modifylevel: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'levels only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }

@@ -5,6 +5,8 @@ import {
   type AutocompleteInteraction,
 } from 'discord.js';
 
+import type { Guild } from 'discord.js';
+
 import type { SlashCommand } from '../client.js';
 import {
   createItem,
@@ -12,12 +14,12 @@ import {
   deleteItem,
   getItem,
   listItems,
-  getCirculation,
   transferItem,
+  type Item,
 } from '../items.js';
-import { serverEmbed, userEmbed } from '../style.js';
+import { serverEmbed, userEmbed, NO_DMS } from '../style.js';
 import { parse } from '../autoresponder/parser.js';
-import type { Node } from '../autoresponder/ast.js';
+import type { Node, PlaceholderNode } from '../autoresponder/ast.js';
 import { templateIssues } from '../autoresponder/validate.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
@@ -37,6 +39,46 @@ function itemReplyIssues(reply: string): string | null {
     return "{cooldown} doesn't work in item replies ! the item getting used up is already the limit c:";
   }
   return templateIssues(reply);
+}
+
+function rolesOnUse(useReply: string | null): string {
+  if (!useReply) return 'none';
+  const roles = parse(useReply)
+    .filter(
+      (node): node is PlaceholderNode =>
+        node.kind === 'placeholder' && node.name === 'giverole',
+    )
+    .map((node) => (node.args[0] ?? '').trim())
+    .filter((arg) => arg !== '')
+    .map((arg) => (/^\d+$/.test(arg) ? `<@&${arg}>` : arg));
+  return roles.length ? roles.join(', ') : 'none';
+}
+
+function itemDetailEmbed(guild: Guild, title: string, item: Item) {
+  return serverEmbed(guild)
+    .setTitle(title)
+    .setDescription(`${item.emoji ?? '📦'} **${item.name}**`)
+    .addFields(
+      {
+        name: 'description',
+        value: item.description ?? 'none',
+      },
+      {
+        name: 'reply',
+        value: item.useReply ? 'yes !' : 'none',
+        inline: true,
+      },
+      {
+        name: 'role on use',
+        value: rolesOnUse(item.useReply),
+        inline: true,
+      },
+      {
+        name: 'giftable',
+        value: item.giftable ? 'yes !' : 'no',
+        inline: true,
+      },
+    );
 }
 
 export async function respondWithItemNames(
@@ -63,11 +105,11 @@ export const items: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('create')
-        .setDescription('create a new item (needs manage server)')
+        .setDescription('create a new item')
         .addStringOption((o) =>
           o
             .setName('name')
-            .setDescription('the item name (also its id, case insensitive)')
+            .setDescription('the item name')
             .setMaxLength(NAME_MAX)
             .setRequired(true),
         )
@@ -88,31 +130,27 @@ export const items: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('reply')
-            .setDescription(
-              'what happens when someone uses it (same syntax as autoresponder replies)',
-            )
+            .setDescription('what happens when someone uses it')
             .setMaxLength(REPLY_MAX)
             .setRequired(false),
         )
         .addRoleOption((o) =>
           o
             .setName('role')
-            .setDescription(
-              'role given on use (appends {giverole} to the reply)',
-            )
+            .setDescription('role given on use')
             .setRequired(false),
         )
         .addBooleanOption((o) =>
           o
             .setName('giftable')
-            .setDescription('can this item be gifted? (default yes)')
+            .setDescription('can this item be gifted?')
             .setRequired(false),
         ),
     )
     .addSubcommand((sub) =>
       sub
         .setName('edit')
-        .setDescription('change an item (needs manage server)')
+        .setDescription('change an item')
         .addStringOption((o) =>
           o
             .setName('name')
@@ -138,16 +176,14 @@ export const items: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('reply')
-            .setDescription('the new use reply (blank to clear it)')
+            .setDescription('the new use reply, blank clears it')
             .setMaxLength(REPLY_MAX)
             .setRequired(false),
         )
         .addRoleOption((o) =>
           o
             .setName('role')
-            .setDescription(
-              'role given on use (appends {giverole} to the reply)',
-            )
+            .setDescription('role given on use')
             .setRequired(false),
         )
         .addBooleanOption((o) =>
@@ -160,7 +196,7 @@ export const items: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('delete')
-        .setDescription('delete an item (removes it from every inventory !)')
+        .setDescription('delete an item')
         .addStringOption((o) =>
           o
             .setName('name')
@@ -217,7 +253,7 @@ export const items: SlashCommand = {
         .addIntegerOption((o) =>
           o
             .setName('amount')
-            .setDescription('how many (default 1)')
+            .setDescription('how many')
             .setMinValue(1)
             .setRequired(false),
         ),
@@ -228,7 +264,7 @@ export const items: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'items only exist inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
@@ -284,15 +320,12 @@ export const items: SlashCommand = {
         return;
       }
 
-      const notes = [
-        useReply ? 'usable !' : null,
-        giftable ? null : 'not giftable',
-      ].filter((n) => n !== null);
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ item created !')
-        .setDescription(
-          `${emoji ?? '📦'} **${name.trim()}**${description ? `\n${description}` : ''}${notes.length ? `\n-# ${notes.join(' · ')}` : ''}`,
-        );
+      const item = getItem(guildId, name)!;
+      const embed = itemDetailEmbed(
+        interaction.guild,
+        '✦ item created !',
+        item,
+      );
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -353,15 +386,11 @@ export const items: SlashCommand = {
       });
 
       const updated = getItem(guildId, name)!;
-      const notes = [
-        updated.useReply ? 'usable !' : null,
-        updated.giftable ? null : 'not giftable',
-      ].filter((n) => n !== null);
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ item updated !')
-        .setDescription(
-          `${updated.emoji ?? '📦'} **${updated.name}**${updated.description ? `\n${updated.description}` : ''}${notes.length ? `\n-# ${notes.join(' · ')}` : ''}`,
-        );
+      const embed = itemDetailEmbed(
+        interaction.guild,
+        '✦ item updated !',
+        updated,
+      );
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -414,26 +443,41 @@ export const items: SlashCommand = {
         return;
       }
 
+      const all = listItems(guildId);
+      const position = all.findIndex((i) => i.nameKey === item.nameKey) + 1;
+
       const embed = serverEmbed(interaction.guild)
-        .setTitle(`✦ ${item.emoji ?? '📦'} ${item.name}`)
-        .setDescription(item.description ?? 'no description... very mysterious')
+        .setAuthor({
+          name: `${interaction.guild.name} ⋆ item details`,
+          iconURL: interaction.guild.iconURL({ size: 256 }) ?? undefined,
+        })
+        .setTitle(`${item.emoji ?? '📦'} ${item.name}`)
+        .setDescription(
+          item.description
+            ? `> *${item.description}*`
+            : '> *no description,,, scary*',
+        )
         .addFields(
           {
-            name: 'in circulation',
-            value: getCirculation(guildId, name).toLocaleString('en-US'),
-            inline: true,
-          },
-          {
-            name: 'usable',
-            value: item.useReply ? 'yes !' : 'no',
+            name: 'reply',
+            value: item.useReply ? 'yes' : 'no',
             inline: true,
           },
           {
             name: 'giftable',
-            value: item.giftable ? 'yes !' : 'no',
+            value: item.giftable ? 'yes' : 'no',
             inline: true,
           },
-        );
+          {
+            name: 'gives role',
+            value: rolesOnUse(item.useReply),
+            inline: true,
+          },
+        )
+        .setFooter({
+          text: `item ${position} of ${all.length}`,
+        })
+        .setTimestamp(item.createdAt);
 
       await interaction.reply({ embeds: [embed] });
       return;

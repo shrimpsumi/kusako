@@ -59,7 +59,7 @@ function checkTargetArg(
 
   if (!/^(<@!?\d+>|@?\d+)$/.test(value)) {
     errors.push(
-      `{${tag}}'s target needs a user id, mention, or something like [$1] — usernames don't work !`,
+      `{${tag}}'s target needs a user id, mention, or something like [$1],, usernames don't work !`,
     );
   }
 }

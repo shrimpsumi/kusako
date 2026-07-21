@@ -20,6 +20,7 @@ import { getGuildSetting, setGuildSetting } from '../settings.js';
 import { templateIssues } from '../autoresponder/validate.js';
 import { parse } from '../autoresponder/parser.js';
 import { fireEvent, eventChannelKey } from '../events/guildEvents.js';
+import { serverEmbed, NO_DMS } from '../style.js';
 
 const RESPONSE_MAX = 2000;
 
@@ -38,14 +39,12 @@ function eventOption(o: SlashCommandStringOption): SlashCommandStringOption {
 export const events: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('events')
-    .setDescription(
-      'messages sako sends when things happen (join, leave, boost)',
-    )
+    .setDescription('messages sako sends when things happen')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
       sub
         .setName('set')
-        .setDescription('set the message for an event (replaces the old one)')
+        .setDescription('set the message for an event')
         .addStringOption(eventOption)
         .addStringOption((o) =>
           o
@@ -96,7 +95,7 @@ export const events: SlashCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: 'events only work inside a server !!',
+        content: NO_DMS,
       });
       return;
     }
@@ -155,11 +154,26 @@ export const events: SlashCommand = {
     if (sub === 'show' && kind) {
       const responder = getEventResponder(guildId, kind);
 
-      await interaction.reply({
-        content: responder
-          ? `the **${kind}** message is:\n${codeBlock(responder.response)}`
-          : `no ${kind} message set yet. make one with ${inlineCode('/events set')} !`,
-      });
+      if (!responder) {
+        await interaction.reply({
+          content: `no ${kind} message set yet. make one with ${inlineCode('/events set')} !`,
+        });
+        return;
+      }
+
+      const channelId = getGuildSetting(guildId, eventChannelKey(kind));
+      const embed = serverEmbed(interaction.guild)
+        .setTitle(`✦ ${kind} message`)
+        .setDescription(
+          `${codeBlock(responder.response)}\n-# fire it for real with ${inlineCode('/events test')}`,
+        )
+        .addFields({
+          name: 'channel',
+          value: channelId ? `→ ${channelMention(channelId)}` : '→ nowhere !',
+          inline: true,
+        });
+
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
@@ -175,20 +189,27 @@ export const events: SlashCommand = {
     }
 
     if (sub === 'view') {
-      const lines = EVENT_KINDS.map((eventKind) => {
-        const responder = getEventResponder(guildId, eventKind);
-        const channelId = getGuildSetting(guildId, eventChannelKey(eventKind));
+      const embed = serverEmbed(interaction.guild)
+        .setTitle('✦ event messages')
+        .setDescription(
+          `-# an event with no channel never fires,, try ${inlineCode('/events test')}`,
+        )
+        .addFields(
+          EVENT_KINDS.map((eventKind) => {
+            const responder = getEventResponder(guildId, eventKind);
+            const channelId = getGuildSetting(
+              guildId,
+              eventChannelKey(eventKind),
+            );
+            return {
+              name: eventKind,
+              value: `${responder ? '✓ message set' : '✗ no message'}\n${channelId ? `→ ${channelMention(channelId)}` : '→ nowhere !'}`,
+              inline: true,
+            };
+          }),
+        );
 
-        const message = responder ? 'message set' : 'no message';
-        const channel = channelId
-          ? `posts to ${channelMention(channelId)}`
-          : 'no channel';
-        return `• **${eventKind}**: ${message}, ${channel}`;
-      });
-
-      await interaction.reply({
-        content: `✦ event messages\n${lines.join('\n')}`,
-      });
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
