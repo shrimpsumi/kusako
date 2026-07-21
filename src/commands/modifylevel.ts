@@ -14,7 +14,7 @@ import {
   totalXpForLevel,
   MAX_LEVEL,
 } from '../levels.js';
-import { fireLevelUps } from '../levelups.js';
+import { fireLevelUps, countLevelResponders } from '../levelups.js';
 import { serverEmbed, NO_DMS } from '../style.js';
 
 function userOption(o: SlashCommandUserOption): SlashCommandUserOption {
@@ -69,14 +69,12 @@ export const modifylevel: SlashCommand = {
       group
         .setName('xp')
         .setDescription('edit raw xp')
+        .addSubcommand((sub) => xpSub(sub, 'add', 'give a member xp', 1))
         .addSubcommand((sub) =>
-          xpSub(sub, 'add', 'give a member xp (fires level up replies !)', 1),
+          xpSub(sub, 'remove', 'take xp from a member', 1),
         )
         .addSubcommand((sub) =>
-          xpSub(sub, 'remove', 'take xp from a member (silent)', 1),
-        )
-        .addSubcommand((sub) =>
-          xpSub(sub, 'set', "set a member's exact xp (silent)", 0),
+          xpSub(sub, 'set', "set a member's exact xp", 0),
         ),
     )
     .addSubcommandGroup((group) =>
@@ -84,18 +82,13 @@ export const modifylevel: SlashCommand = {
         .setName('level')
         .setDescription('edit whole levels')
         .addSubcommand((sub) =>
-          levelSub(
-            sub,
-            'add',
-            'raise a member some levels (fires level up replies !)',
-            1,
-          ),
+          levelSub(sub, 'add', 'raise a member some levels', 1),
         )
         .addSubcommand((sub) =>
-          levelSub(sub, 'remove', 'lower a member some levels (silent)', 1),
+          levelSub(sub, 'remove', 'lower a member some levels', 1),
         )
         .addSubcommand((sub) =>
-          levelSub(sub, 'set', "set a member's exact level (silent)", 1),
+          levelSub(sub, 'set', "set a member's exact level", 1),
         ),
     ) as SlashCommandBuilder,
 
@@ -153,7 +146,15 @@ export const modifylevel: SlashCommand = {
     }
 
     const afterLevel = levelFromXp(result.xp);
-    const summary = `${member} is now level **${afterLevel}** with **${result.xp.toLocaleString('en-US')}** xp !`;
+    const crossed = countLevelResponders(guildId, beforeLevel, afterLevel);
+    const summary = [
+      `${member} is now level **${afterLevel}** with **${result.xp.toLocaleString('en-US')}** xp !`,
+      crossed > 0
+        ? `-# ✧ firing ${crossed} level up ${crossed === 1 ? 'reply' : 'replies'} they crossed`
+        : null,
+    ]
+      .filter((line) => line !== null)
+      .join('\n');
 
     const embed = serverEmbed(interaction.guild)
       .setTitle('✦ levels updated !')
@@ -164,7 +165,7 @@ export const modifylevel: SlashCommand = {
       allowedMentions: { parse: [] },
     });
 
-    if (sub === 'add' && afterLevel > beforeLevel && interaction.channel) {
+    if (afterLevel > beforeLevel && interaction.channel) {
       await fireLevelUps(member, interaction.channel, beforeLevel, afterLevel);
     }
   },
