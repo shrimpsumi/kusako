@@ -3,6 +3,7 @@ import { Events, MessageFlags } from 'discord.js';
 import type { SakoClient } from '../client.js';
 import { handleEmbedComponents } from '../commands/embeds.js';
 import { handleItemComponents } from '../commands/items.js';
+import { handleSettingsComponents } from '../commands/settings.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -24,6 +25,28 @@ export function registerInteractionCreate(client: SakoClient): void {
         await handleItemComponents(interaction);
       } catch (err) {
         logger.error({ err, id: interaction.customId }, 'item confirm failed');
+      }
+      return;
+    }
+
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId.startsWith('settings:')
+    ) {
+      try {
+        await handleSettingsComponents(interaction);
+      } catch (err) {
+        logger.error(
+          { err, id: interaction.customId },
+          'settings panel failed',
+        );
+        await interaction
+          .reply({
+            content:
+              'that panel is too old to poke at ! run /settings view again c:',
+            flags: MessageFlags.Ephemeral,
+          })
+          .catch(() => {});
       }
       return;
     }

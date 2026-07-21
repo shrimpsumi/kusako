@@ -2,7 +2,7 @@ import { Events, type Guild, type GuildMember } from 'discord.js';
 
 import type { SakoClient } from '../client.js';
 import { getEventResponder, type EventKind } from '../autoresponder/store.js';
-import { getGuildSetting } from '../settings.js';
+import { getGuildSetting, eventChannelKey } from '../settings.js';
 import { parse } from '../autoresponder/parser.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
@@ -10,9 +10,7 @@ import { logger } from '../logger.js';
 
 export type FireOutcome = 'fired' | 'no-template' | 'no-channel' | 'blocked';
 
-export function eventChannelKey(kind: EventKind): string {
-  return `event.${kind}.channel`;
-}
+export { eventChannelKey };
 
 export async function fireEvent(
   guild: Guild,

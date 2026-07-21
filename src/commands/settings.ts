@@ -1,4 +1,12 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  type Guild,
+  type StringSelectMenuInteraction,
+} from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, setCurrency } from '../economy.js';
@@ -8,9 +16,150 @@ import {
   isGameEnabled,
   setGameEnabled,
 } from '../games.js';
-import { isLevelingEnabled, setLevelingEnabled } from '../levels.js';
+import { setLevelingEnabled } from '../levels.js';
 import { formatDuration } from '../autoresponder/args.js';
-import { serverEmbed, NO_DMS } from '../style.js';
+import {
+  groups,
+  findGroup,
+  findSetting,
+  SETTINGS,
+} from '../settingsRegistry.js';
+import { commandMention } from '../commandMentions.js';
+import { serverEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../style.js';
+
+function groupSelect(
+  selected: string | null,
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId('settings:group')
+    .setPlaceholder('pick a group')
+    .addOptions(
+      groups().map((group) => ({
+        label: group.label,
+        value: group.id,
+        description: `${group.settings.length} setting${group.settings.length === 1 ? '' : 's'}`,
+        default: group.id === selected,
+      })),
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+}
+
+function settingSelect(
+  groupId: string,
+  selected: string | null,
+): ActionRowBuilder<StringSelectMenuBuilder> | null {
+  const group = findGroup(groupId);
+  if (!group) return null;
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId('settings:setting')
+    .setPlaceholder('pick a setting to change')
+    .addOptions(
+      group.settings.map((setting) => ({
+        label: setting.label,
+        value: setting.id,
+        default: setting.id === selected,
+      })),
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+}
+
+function overviewPayload(guild: Guild) {
+  const all = groups();
+  const count = SETTINGS.length;
+  const header = `꒰ control panel ꒱ *${all.length} group${all.length === 1 ? '' : 's'} ⊹ ${count} setting${count === 1 ? '' : 's'}*`;
+
+  const blocks = all.map((group) =>
+    [
+      `⊹ ࣪ ˖ **${group.label}** ˖ ࣪ ⊹`,
+      `-# ✧ ${group.settings.map((setting) => setting.label).join(' ━ ')}`,
+    ].join('\n'),
+  );
+
+  const embed = serverEmbed(guild)
+    .setDescription(
+      [header, ...blocks, "⁀જ➣ *pick a group below to see what's set !*"].join(
+        '\n\n',
+      ),
+    )
+    .setImage(SPACER_IMAGE);
+
+  return {
+    embeds: [embed],
+    components: [groupSelect(null)],
+    files: [spacerFile()],
+  };
+}
+
+function groupPayload(guild: Guild, groupId: string) {
+  const group = findGroup(groupId);
+  if (!group) return overviewPayload(guild);
+
+  const header = `꒰ ${group.label} ꒱ *${group.settings.length} setting${group.settings.length === 1 ? '' : 's'}*`;
+  const blocks = group.settings.map((setting) =>
+    [
+      `ᯓ➤ **${setting.label}**`,
+      ...setting.render(guild.id).map((line) => `-# ✧ ${line}`),
+    ].join('\n'),
+  );
+
+  const embed = serverEmbed(guild)
+    .setAuthor({
+      name: `${guild.name} ⋆ ${group.label}`,
+      iconURL: guild.iconURL({ size: 256 }) ?? undefined,
+    })
+    .setDescription(
+      [
+        header,
+        ...blocks,
+        "⁀જ➣ *pick a setting below and i'll send you the command !*",
+      ].join('\n\n'),
+    )
+    .setImage(SPACER_IMAGE);
+
+  const rows = [groupSelect(group.id)];
+  const second = settingSelect(group.id, null);
+  if (second) rows.push(second);
+
+  return { embeds: [embed], components: rows, files: [spacerFile()] };
+}
+
+export async function handleSettingsComponents(
+  interaction: StringSelectMenuInteraction,
+): Promise<void> {
+  if (!interaction.inCachedGuild()) return;
+
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
+    await interaction.reply({
+      content: 'you need **manage server** to poke at the settings !',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const choice = interaction.values[0] ?? '';
+
+  if (interaction.customId === 'settings:group') {
+    await interaction.update(groupPayload(interaction.guild, choice));
+    return;
+  }
+
+  const setting = findSetting(choice);
+  if (!setting) {
+    await interaction.reply({
+      content: "i don't know that setting ! run /settings view again c:",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  await interaction.reply({
+    content: `you can change that with ${commandMention(setting.command)} !`,
+    flags: MessageFlags.Ephemeral,
+  });
+}
 
 export const settings: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -22,11 +171,11 @@ export const settings: SlashCommand = {
     )
     .addSubcommandGroup((group) =>
       group
-        .setName('currency')
-        .setDescription('economy + currency settings')
+        .setName('set')
+        .setDescription('change a setting')
         .addSubcommand((sub) =>
           sub
-            .setName('set')
+            .setName('currency')
             .setDescription('change the server currency')
             .addStringOption((o) =>
               o
@@ -42,15 +191,10 @@ export const settings: SlashCommand = {
                 .setMaxLength(64)
                 .setRequired(true),
             ),
-        ),
-    )
-    .addSubcommandGroup((group) =>
-      group
-        .setName('pat')
-        .setDescription('head pat minigame settings')
+        )
         .addSubcommand((sub) =>
           sub
-            .setName('set')
+            .setName('pat')
             .setDescription('tune the head pat minigame')
             .addIntegerOption((o) =>
               o
@@ -78,15 +222,10 @@ export const settings: SlashCommand = {
                 .setName('enabled')
                 .setDescription('turn /pat on or off for this server'),
             ),
-        ),
-    )
-    .addSubcommandGroup((group) =>
-      group
-        .setName('levels')
-        .setDescription('leveling system settings')
+        )
         .addSubcommand((sub) =>
           sub
-            .setName('set')
+            .setName('levels')
             .setDescription('turn leveling on or off')
             .addBooleanOption((o) =>
               o
@@ -110,37 +249,11 @@ export const settings: SlashCommand = {
     const sub = interaction.options.getSubcommand();
 
     if (group === null && sub === 'view') {
-      const currency = getCurrency(guildId);
-      const pat = getPatSettings(guildId);
-      const patValue = isGameEnabled(guildId, 'pat')
-        ? `${currency.emoji} ${pat.minReward.toLocaleString('en-US')}-${pat.maxReward.toLocaleString('en-US')} per pat, every ${formatDuration(pat.cooldownSeconds)}`
-        : 'disabled';
-
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ sako settings !')
-        .addFields(
-          {
-            name: 'currency',
-            value: `${currency.emoji} ${currency.name}`,
-            inline: true,
-          },
-          {
-            name: 'head pats',
-            value: patValue,
-            inline: true,
-          },
-          {
-            name: 'leveling',
-            value: isLevelingEnabled(guildId) ? 'on' : 'off',
-            inline: true,
-          },
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(overviewPayload(interaction.guild));
       return;
     }
 
-    if (group === 'currency' && sub === 'set') {
+    if (group === 'set' && sub === 'currency') {
       const name = interaction.options.getString('name', true);
       const emoji = interaction.options.getString('emoji', true);
       setCurrency(guildId, { name, emoji });
@@ -153,7 +266,7 @@ export const settings: SlashCommand = {
       return;
     }
 
-    if (group === 'pat' && sub === 'set') {
+    if (group === 'set' && sub === 'pat') {
       const min = interaction.options.getInteger('min');
       const max = interaction.options.getInteger('max');
       const cooldown = interaction.options.getInteger('cooldown');
@@ -202,7 +315,7 @@ export const settings: SlashCommand = {
       return;
     }
 
-    if (group === 'levels' && sub === 'set') {
+    if (group === 'set' && sub === 'levels') {
       const enabled = interaction.options.getBoolean('enabled', true);
       setLevelingEnabled(guildId, enabled);
 
