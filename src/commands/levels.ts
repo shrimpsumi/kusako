@@ -3,6 +3,7 @@ import {
   PermissionFlagsBits,
   codeBlock,
   inlineCode,
+  type Guild,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
@@ -15,8 +16,46 @@ import {
 import { templateIssues } from '../autoresponder/validate.js';
 import { isLevelingEnabled, MAX_LEVEL } from '../levels.js';
 import { serverEmbed, NO_DMS } from '../style.js';
+import { templateTraits } from './autoresponders.js';
+import { paginate, applyPage } from '../pagination.js';
+import { registerPage } from '../pageRegistry.js';
 
 const RESPONSE_MAX = 2000;
+
+function levelsPage(guild: Guild, _userId: string, page: number) {
+  const entries = listLevelResponders(guild.id);
+
+  if (entries.length === 0) {
+    const embed = serverEmbed(guild)
+      .setTitle('✦ level replies (0)')
+      .setDescription(
+        `no level replies yet ! add one with ${inlineCode('/levels set')}`,
+      );
+
+    return { embeds: [embed], components: [] };
+  }
+
+  const off = isLevelingEnabled(guild.id)
+    ? null
+    : `-# leveling is off,, none of these fire until ${inlineCode('/settings set levels')}`;
+
+  const blocks = entries.map(({ level, responder }) => {
+    const badges = templateTraits(responder.response).badges;
+    const summary = badges.length ? badges.join(' · ') : 'just a message';
+    return `ᯓ➤ **level ${level}**\n-# ✧ ${summary}`;
+  });
+
+  const hint = `⁀જ➣ see one up close with ${inlineCode('/levels show <level>')}`;
+  const current = paginate(blocks, off, hint, page);
+  const embed = serverEmbed(guild).setTitle(
+    `✦ level replies (${entries.length})`,
+  );
+  const components = applyPage(embed, 'levels', current);
+
+  return { embeds: [embed], components };
+}
+
+registerPage('levels', levelsPage);
 
 export const levels: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -163,24 +202,9 @@ export const levels: SlashCommand = {
     }
 
     if (sub === 'list') {
-      const entries = listLevelResponders(guildId);
-
-      if (entries.length === 0) {
-        await interaction.reply({
-          content: `no level replies yet ! add one with ${inlineCode('/levels set')}`,
-        });
-        return;
-      }
-
-      const lines = entries.map(
-        (entry) =>
-          `**level ${entry.level}** · ${entry.responder.response.length} chars`,
+      await interaction.reply(
+        levelsPage(interaction.guild, interaction.user.id, 0),
       );
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ level replies !')
-        .setDescription(lines.join('\n').slice(0, 4096));
-
-      await interaction.reply({ embeds: [embed] });
       return;
     }
   },
