@@ -114,7 +114,7 @@ export const levels: SlashCommand = {
 
       const warning = isLevelingEnabled(guildId)
         ? ''
-        : `\n\nheads up: leveling is OFF in this server ! turn it on with ${inlineCode('/settings levels set enabled:true')}`;
+        : `\n\nheads up: leveling is OFF in this server ! turn it on with ${inlineCode('/settings set levels enabled:true')}`;
       const embed = serverEmbed(interaction.guild)
         .setTitle('✦ level reply set !')
         .setDescription(
