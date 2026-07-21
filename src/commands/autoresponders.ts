@@ -4,6 +4,7 @@ import {
   codeBlock,
   inlineCode,
   type AutocompleteInteraction,
+  type Guild,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
@@ -21,9 +22,8 @@ import { parse } from '../autoresponder/parser.js';
 import { parseAmount, formatDuration } from '../autoresponder/args.js';
 import type { PlaceholderNode } from '../autoresponder/ast.js';
 import { serverEmbed, NO_DMS } from '../style.js';
-
-const LIST_ROW_MAX = 40;
-const LIST_CHAR_BUDGET = 3800;
+import { paginate, applyPage } from '../pagination.js';
+import { registerPage } from '../pageRegistry.js';
 
 function channelBadge(arg: string): string {
   const trimmed = arg.trim();
@@ -87,6 +87,37 @@ function templateTraits(response: string): {
 
 const TRIGGER_MAX = 100;
 const RESPONSE_MAX = 2000;
+
+function respondersPage(guild: Guild, _userId: string, page: number) {
+  const all = listAutoresponders(guild.id);
+
+  if (all.length === 0) {
+    const embed = serverEmbed(guild)
+      .setTitle('✦ autoresponders (0)')
+      .setDescription(
+        `no autoresponders yet,, make your first with ${inlineCode('/autoresponders add')}`,
+      );
+
+    return { embeds: [embed], components: [] };
+  }
+
+  const blocks = all.map((responder) =>
+    [
+      inlineCode(responder.trigger),
+      responder.matchMode,
+      ...templateTraits(responder.response).badges,
+    ].join(' · '),
+  );
+
+  const hint = `-# see one up close with ${inlineCode('/autoresponders show')}`;
+  const current = paginate(blocks, null, hint, page, '\n');
+  const embed = serverEmbed(guild).setTitle(`✦ autoresponders (${all.length})`);
+  const components = applyPage(embed, 'responders', current);
+
+  return { embeds: [embed], components };
+}
+
+registerPage('responders', respondersPage);
 
 async function respondWithTriggers(
   interaction: AutocompleteInteraction,
@@ -309,44 +340,9 @@ export const autoresponders: SlashCommand = {
     }
 
     if (sub === 'list') {
-      const all = listAutoresponders(guildId);
-      const embed = serverEmbed(interaction.guild).setTitle(
-        `✦ autoresponders (${all.length})`,
+      await interaction.reply(
+        respondersPage(interaction.guild, interaction.user.id, 0),
       );
-
-      if (all.length === 0) {
-        embed.setDescription(
-          `no autoresponders yet,, make your first with ${inlineCode('/autoresponders add')}`,
-        );
-        await interaction.reply({ embeds: [embed] });
-        return;
-      }
-
-      const rows: string[] = [];
-      let used = 0;
-      for (const responder of all) {
-        const row = [
-          inlineCode(responder.trigger),
-          responder.matchMode,
-          ...templateTraits(responder.response).badges,
-        ].join(' · ');
-        if (
-          rows.length >= LIST_ROW_MAX ||
-          used + row.length + 1 > LIST_CHAR_BUDGET
-        ) {
-          break;
-        }
-        rows.push(row);
-        used += row.length + 1;
-      }
-
-      embed
-        .setDescription(
-          `${rows.join('\n')}\n\n-# see one up close with ${inlineCode('/autoresponders show')}`,
-        )
-        .setFooter({ text: `${rows.length} of ${all.length} shown` });
-
-      await interaction.reply({ embeds: [embed] });
       return;
     }
 

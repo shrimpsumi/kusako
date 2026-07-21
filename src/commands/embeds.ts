@@ -13,6 +13,7 @@ import {
   type AutocompleteInteraction,
   type ButtonInteraction,
   type ModalSubmitInteraction,
+  type Guild,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
@@ -37,6 +38,8 @@ import { listAllTemplates } from '../autoresponder/store.js';
 import { listItems } from '../items.js';
 import { parse } from '../autoresponder/parser.js';
 import type { PlaceholderNode } from '../autoresponder/ast.js';
+import { paginate, applyPage } from '../pagination.js';
+import { registerPage } from '../pageRegistry.js';
 
 const NAME_MAX = 50;
 const JSON_MAX = 6000;
@@ -306,6 +309,53 @@ function usageLine(usage: EmbedUsage | undefined): string {
     usage.users.length > 3 ? ` +${usage.users.length - 3} more` : '';
   return `used by ${shown}${extra}`;
 }
+
+function embedsPage(guild: Guild, _userId: string, page: number) {
+  const all = listEmbeds(guild.id);
+
+  if (all.length === 0) {
+    const embed = serverEmbed(guild)
+      .setTitle('no embeds yet !')
+      .setDescription(
+        `nothing saved here,, make your first one with ${inlineCode('/embeds add')} c:`,
+      );
+
+    return { embeds: [embed], components: [] };
+  }
+
+  const usage = usageIndex(guild.id);
+  const header = `꒰ saved embeds ꒱ *${all.length} of them !*`;
+  const hint = `⁀જ➣ preview one with ${inlineCode('/embeds show <name>')}`;
+
+  const blocks = all.map((record) => {
+    const structure = structureOf(record.data);
+    return [
+      `ᯓ➤ **${record.name}**`,
+      structure.length
+        ? `-# ✧ ${structure.join(' ━ ')}`
+        : '-# ✧ still empty,, nothing in it yet',
+      `-# ✧ ${usageLine(usage.get(record.nameKey))}`,
+    ].join('\n');
+  });
+
+  const dynamic = [...usage.values()].reduce(
+    (max, entry) => Math.max(max, entry.dynamic),
+    0,
+  );
+
+  const current = paginate(blocks, header, hint, page);
+  const embed = serverEmbed(guild);
+  const components = applyPage(
+    embed,
+    'embeds',
+    current,
+    dynamic ? `${dynamic} more picked by a capture at send time` : undefined,
+  );
+
+  return { embeds: [embed], components };
+}
+
+registerPage('embeds', embedsPage);
 
 function confirmRow(nameKey: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -700,59 +750,9 @@ export const embeds: SlashCommand = {
     }
 
     if (sub === 'list') {
-      const all = listEmbeds(guildId);
-
-      if (all.length === 0) {
-        const embed = serverEmbed(interaction.guild)
-          .setTitle('no embeds yet !')
-          .setDescription(
-            `nothing saved here,, make your first one with ${inlineCode('/embeds add')} c:`,
-          );
-
-        await interaction.reply({ embeds: [embed] });
-        return;
-      }
-
-      const usage = usageIndex(guildId);
-      const header = `꒰ saved embeds ꒱ *${all.length} of them !*`;
-      const hint = `⁀જ➣ preview one with ${inlineCode('/embeds show <name>')}`;
-
-      const blocks: string[] = [];
-      let hidden = 0;
-      for (const record of all) {
-        const structure = structureOf(record.data);
-        const lines = [`ᯓ➤ **${record.name}**`];
-        lines.push(
-          structure.length
-            ? `-# ✧ ${structure.join(' ━ ')}`
-            : '-# ✧ still empty,, nothing in it yet',
-        );
-        lines.push(`-# ✧ ${usageLine(usage.get(record.nameKey))}`);
-        const block = lines.join('\n');
-
-        const projected = [header, ...blocks, block, hint].join('\n\n');
-        if (projected.length > EMBED_LIMITS.description) {
-          hidden = all.length - blocks.length;
-          break;
-        }
-        blocks.push(block);
-      }
-
-      const dynamic = [...usage.values()].reduce(
-        (max, entry) => Math.max(max, entry.dynamic),
-        0,
+      await interaction.reply(
+        embedsPage(interaction.guild, interaction.user.id, 0),
       );
-      const footer = [
-        hidden ? `${hidden} more didn't fit` : null,
-        dynamic ? `${dynamic} more picked by a capture at send time` : null,
-      ].filter((part) => part !== null);
-
-      const embed = serverEmbed(interaction.guild).setDescription(
-        [header, ...blocks, hint].join('\n\n'),
-      );
-      if (footer.length) embed.setFooter({ text: footer.join(' ━━━ ') });
-
-      await interaction.reply({ embeds: [embed] });
       return;
     }
 

@@ -4,6 +4,7 @@ import type { SakoClient } from '../client.js';
 import { handleEmbedComponents } from '../commands/embeds.js';
 import { handleItemComponents } from '../commands/items.js';
 import { handleSettingsComponents } from '../commands/settings.js';
+import { buildPage } from '../pageRegistry.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -25,6 +26,28 @@ export function registerInteractionCreate(client: SakoClient): void {
         await handleItemComponents(interaction);
       } catch (err) {
         logger.error({ err, id: interaction.customId }, 'item confirm failed');
+      }
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('page:')) {
+      try {
+        if (!interaction.inCachedGuild()) return;
+
+        const parts = interaction.customId.split(':');
+        const raw = parts[parts.length - 1] ?? '0';
+        const key = parts[1] ?? '';
+        const scope = parts.slice(2, -1).join(':');
+
+        const payload = buildPage(
+          key,
+          interaction.guild,
+          scope || interaction.user.id,
+          Number(raw),
+        );
+        if (payload) await interaction.update(payload);
+      } catch (err) {
+        logger.error({ err, id: interaction.customId }, 'pagination failed');
       }
       return;
     }

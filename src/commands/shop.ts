@@ -3,6 +3,7 @@ import {
   PermissionFlagsBits,
   inlineCode,
   type AutocompleteInteraction,
+  type Guild,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
@@ -15,12 +16,58 @@ import {
   purchase,
 } from '../shop.js';
 import { getCurrency } from '../economy.js';
-import { EMBED_LIMITS } from '../embeds.js';
+import { paginate, applyPage } from '../pagination.js';
+import { registerPage } from '../pageRegistry.js';
 import { serverEmbed, userEmbed, NO_DMS } from '../style.js';
 
 const NAME_MAX = 50;
 
 const ADMIN_SUBS = new Set(['add', 'remove']);
+
+function shopPage(guild: Guild, _userId: string, page: number) {
+  const entries = listShop(guild.id);
+
+  if (entries.length === 0) {
+    const embed = serverEmbed(guild)
+      .setTitle('oh no... the shop is empty !')
+      .setDescription(
+        `the shelves are all empty,, sako has nothing to sell to you!\n\n-# admins can add items with ${inlineCode('/shop add')}`,
+      );
+
+    return { embeds: [embed], components: [] };
+  }
+
+  const currency = getCurrency(guild.id);
+  const greeting = "꒰^ >ヮ<^꒱ *hiiii! here's what i've got for sale:*";
+  const buyHint = `⁀જ buy with ${inlineCode('/shop buy <item>')}`;
+
+  const blocks = entries.map(({ item, listing }) => {
+    const stock =
+      listing.stock === null
+        ? 'unlimited'
+        : listing.stock <= 0
+          ? 'sold out :c'
+          : `\`${listing.stock}\``;
+    const requires = listing.requiredRoleId
+      ? `<@&${listing.requiredRoleId}>`
+      : 'none';
+
+    const lines = [
+      `ᯓ➤ **${item.name}** · ${currency.emoji} \`${listing.price.toLocaleString('en-US')}\``,
+    ];
+    if (item.description) lines.push(`-# ✧ ${item.description}`);
+    lines.push(`-# ✧ stock: ${stock} ━ requires: ${requires}`);
+    return lines.join('\n');
+  });
+
+  const current = paginate(blocks, greeting, buyHint, page);
+  const embed = serverEmbed(guild);
+  const components = applyPage(embed, 'shop', current);
+
+  return { embeds: [embed], components };
+}
+
+registerPage('shop', shopPage);
 
 async function respondWithShopNames(
   interaction: AutocompleteInteraction,
@@ -135,62 +182,9 @@ export const shop: SlashCommand = {
     }
 
     if (sub === 'list') {
-      const entries = listShop(guildId);
-
-      if (entries.length === 0) {
-        const embed = serverEmbed(interaction.guild)
-          .setTitle('oh no... the shop is empty !')
-          .setDescription(
-            `the shelves are all empty,, sako has nothing to sell to you!\n\n-# admins can add items with ${inlineCode('/shop add')}`,
-          );
-
-        await interaction.reply({ embeds: [embed] });
-        return;
-      }
-
-      const currency = getCurrency(guildId);
-
-      const greeting = "꒰^ >ヮ<^꒱ *hiiii! here's what i've got for sale:*";
-      const buyHint = `⁀જ➣ buy with ${inlineCode('/shop buy <item>')}`;
-
-      const blocks: string[] = [];
-      let hidden = 0;
-      for (const { item, listing } of entries) {
-        const stock =
-          listing.stock === null
-            ? 'unlimited'
-            : listing.stock <= 0
-              ? 'sold out :c'
-              : `\`${listing.stock}\``;
-        const requires = listing.requiredRoleId
-          ? `<@&${listing.requiredRoleId}>`
-          : 'none';
-
-        const lines = [
-          `ᯓ➤ **${item.name}**  ·  ${currency.emoji} \`${listing.price.toLocaleString('en-US')}\``,
-        ];
-        if (item.description) lines.push(`-# ✧ ${item.description}`);
-        lines.push(`-# ✧ stock: ${stock} ━ requires: ${requires}`);
-        const block = lines.join('\n');
-
-        const projected = [greeting, ...blocks, block, buyHint].join('\n\n');
-        if (projected.length > EMBED_LIMITS.description) {
-          hidden = entries.length - blocks.length;
-          break;
-        }
-        blocks.push(block);
-      }
-
-      const description = [greeting, ...blocks, buyHint].join('\n\n');
-      const embed = serverEmbed(interaction.guild)
-        .setDescription(description)
-        .setFooter({
-          text: hidden
-            ? `page 1 of 1 ━━━ ${hidden} more didn't fit`
-            : 'page 1 of 1 ━━━ use the arrows to browse',
-        });
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(
+        shopPage(interaction.guild, interaction.user.id, 0),
+      );
       return;
     }
 
