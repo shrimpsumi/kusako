@@ -264,7 +264,7 @@ export const shop: SlashCommand = {
       const item = getItem(guildId, name);
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} ! make it first with ${inlineCode('/items create')}`,
+          content: `there's no item called ${inlineCode(name)} ! make it first with ${inlineCode('/items add')}`,
         });
         return;
       }

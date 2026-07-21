@@ -2,6 +2,7 @@ import { Events, MessageFlags } from 'discord.js';
 
 import type { SakoClient } from '../client.js';
 import { handleEmbedComponents } from '../commands/embeds.js';
+import { handleItemComponents } from '../commands/items.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -14,6 +15,15 @@ export function registerInteractionCreate(client: SakoClient): void {
         await handleEmbedComponents(interaction);
       } catch (err) {
         logger.error({ err, id: interaction.customId }, 'embed panel failed');
+      }
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('items:')) {
+      try {
+        await handleItemComponents(interaction);
+      } catch (err) {
+        logger.error({ err, id: interaction.customId }, 'item confirm failed');
       }
       return;
     }

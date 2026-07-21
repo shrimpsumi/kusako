@@ -1,8 +1,13 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  MessageFlags,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   inlineCode,
   type AutocompleteInteraction,
+  type ButtonInteraction,
 } from 'discord.js';
 
 import type { Guild } from 'discord.js';
@@ -13,10 +18,12 @@ import {
   editItem,
   deleteItem,
   getItem,
+  getCirculation,
   listItems,
   transferItem,
   type Item,
 } from '../items.js';
+import { getListing } from '../shop.js';
 import { serverEmbed, userEmbed, NO_DMS } from '../style.js';
 import { parse } from '../autoresponder/parser.js';
 import type { Node, PlaceholderNode } from '../autoresponder/ast.js';
@@ -29,7 +36,7 @@ const DESCRIPTION_MAX = 200;
 const EMOJI_MAX = 64;
 const REPLY_MAX = 2000;
 
-const ADMIN_SUBS = new Set(['create', 'edit', 'delete']);
+const ADMIN_SUBS = new Set(['add', 'edit', 'remove']);
 
 function itemReplyIssues(reply: string): string | null {
   const hasCooldown = parse(reply).some(
@@ -81,6 +88,90 @@ function itemDetailEmbed(guild: Guild, title: string, item: Item) {
     );
 }
 
+function confirmEmbed(guild: Guild, item: Item) {
+  const circulation = getCirculation(guild.id, item.name);
+  const listed = getListing(guild.id, item.name) !== null;
+
+  const stakes = [
+    circulation > 0
+      ? `-# ✧ ${circulation.toLocaleString('en-US')} of them out there in inventories`
+      : '-# ✧ nobody is holding any right now',
+    listed ? '-# it gets pulled from the shop too' : null,
+  ].filter((line) => line !== null);
+
+  return serverEmbed(guild)
+    .setTitle('✦ delete this item ?')
+    .setDescription(
+      [
+        `${item.emoji ?? '📦'} **${item.name}**`,
+        ...stakes,
+        '',
+        "this wipes it from every inventory, for good ! there's no undo,, and i can't give it back after :c",
+      ].join('\n'),
+    );
+}
+
+function confirmRow(nameKey: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`items:remove:${nameKey}`)
+      .setLabel('delete it')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`items:keep:${nameKey}`)
+      .setLabel('nevermind')
+      .setStyle(ButtonStyle.Secondary),
+  );
+}
+
+export async function handleItemComponents(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  const parts = interaction.customId.split(':');
+  const action = parts[1] ?? '';
+  const nameKey = parts.slice(2).join(':');
+
+  if (!interaction.inCachedGuild()) return;
+  if (action !== 'remove' && action !== 'keep') return;
+
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
+    await interaction.reply({
+      content: 'you need **manage server** to manage items !',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (action === 'keep') {
+    const embed = serverEmbed(interaction.guild)
+      .setTitle('phew !')
+      .setDescription(`${inlineCode(nameKey)} is staying right where it is :3`);
+
+    await interaction.update({ embeds: [embed], components: [] });
+    return;
+  }
+
+  const item = getItem(interaction.guildId, nameKey);
+  if (!item) {
+    const embed = serverEmbed(interaction.guild)
+      .setTitle('✦ already gone !')
+      .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
+
+    await interaction.update({ embeds: [embed], components: [] });
+    return;
+  }
+
+  deleteItem(interaction.guildId, nameKey);
+
+  const embed = serverEmbed(interaction.guild)
+    .setTitle('✦ item deleted !')
+    .setDescription(
+      `deleted ${item.emoji ?? '📦'} **${item.name}** and removed it from everyone's inventories.`,
+    );
+
+  await interaction.update({ embeds: [embed], components: [] });
+}
+
 export async function respondWithItemNames(
   interaction: AutocompleteInteraction,
 ): Promise<void> {
@@ -104,7 +195,7 @@ export const items: SlashCommand = {
     .setDescription("this server's items ! browse, use, and gift them")
     .addSubcommand((sub) =>
       sub
-        .setName('create')
+        .setName('add')
         .setDescription('create a new item')
         .addStringOption((o) =>
           o
@@ -195,7 +286,7 @@ export const items: SlashCommand = {
     )
     .addSubcommand((sub) =>
       sub
-        .setName('delete')
+        .setName('remove')
         .setDescription('delete an item')
         .addStringOption((o) =>
           o
@@ -282,7 +373,7 @@ export const items: SlashCommand = {
       return;
     }
 
-    if (sub === 'create') {
+    if (sub === 'add') {
       const name = interaction.options.getString('name', true);
       const description = interaction.options.getString('description');
       const emoji = interaction.options.getString('emoji');
@@ -396,24 +487,21 @@ export const items: SlashCommand = {
       return;
     }
 
-    if (sub === 'delete') {
+    if (sub === 'remove') {
       const name = interaction.options.getString('name', true);
-      const deleted = deleteItem(guildId, name);
+      const item = getItem(guildId, name);
 
-      if (!deleted) {
+      if (!item) {
         await interaction.reply({
           content: `there's no item called ${inlineCode(name)} !`,
         });
         return;
       }
 
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ item deleted !')
-        .setDescription(
-          `deleted ${inlineCode(name)} and removed it from everyone's inventories.`,
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({
+        embeds: [confirmEmbed(interaction.guild, item)],
+        components: [confirmRow(item.nameKey)],
+      });
       return;
     }
 
@@ -425,7 +513,7 @@ export const items: SlashCommand = {
         .setDescription(
           all.length
             ? all.map((i) => `${i.emoji ?? '📦'} **${i.name}**`).join('\n')
-            : `no items yet. make one with ${inlineCode('/items create')} c:`,
+            : `no items yet. make one with ${inlineCode('/items add')} c:`,
         );
 
       await interaction.reply({ embeds: [embed] });
