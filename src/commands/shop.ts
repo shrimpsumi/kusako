@@ -15,6 +15,7 @@ import {
   purchase,
 } from '../shop.js';
 import { getCurrency } from '../economy.js';
+import { EMBED_LIMITS } from '../embeds.js';
 import { serverEmbed, userEmbed, NO_DMS } from '../style.js';
 
 const NAME_MAX = 50;
@@ -173,7 +174,7 @@ export const shop: SlashCommand = {
         const block = lines.join('\n');
 
         const projected = [greeting, ...blocks, block, buyHint].join('\n\n');
-        if (projected.length > 4096) {
+        if (projected.length > EMBED_LIMITS.description) {
           hidden = entries.length - blocks.length;
           break;
         }
