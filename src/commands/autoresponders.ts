@@ -120,13 +120,13 @@ export const autoresponders: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('trigger')
-            .setDescription('triggers the autoresponse')
+            .setDescription('the message that sets it off')
             .setMaxLength(TRIGGER_MAX)
             .setRequired(true),
         )
         .addStringOption((o) =>
           o
-            .setName('response')
+            .setName('reply')
             .setDescription('what sako replies with !')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
@@ -146,8 +146,8 @@ export const autoresponders: SlashCommand = {
         )
         .addStringOption((o) =>
           o
-            .setName('response')
-            .setDescription('the new response')
+            .setName('reply')
+            .setDescription('the new reply')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
         ),
@@ -233,7 +233,7 @@ export const autoresponders: SlashCommand = {
 
     if (sub === 'add') {
       const trigger = interaction.options.getString('trigger', true);
-      const response = interaction.options.getString('response', true);
+      const response = interaction.options.getString('reply', true);
 
       if (trigger.trim().toLowerCase().startsWith('event:')) {
         await interaction.reply({
@@ -255,14 +255,14 @@ export const autoresponders: SlashCommand = {
       await interaction.reply({
         content: created
           ? `added an autoresponder for ${inlineCode(trigger)} c:`
-          : `a responder for ${inlineCode(trigger)} already exists. use ${inlineCode('/autoresponders edit')} to change it.`,
+          : `an autoresponder for ${inlineCode(trigger)} already exists. use ${inlineCode('/autoresponders edit')} to change it.`,
       });
       return;
     }
 
     if (sub === 'edit') {
       const trigger = interaction.options.getString('trigger', true);
-      const response = interaction.options.getString('response', true);
+      const response = interaction.options.getString('reply', true);
 
       const issues = templateIssues(response);
       if (issues) {

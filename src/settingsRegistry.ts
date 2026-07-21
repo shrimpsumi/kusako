@@ -78,12 +78,12 @@ export const SETTINGS: SettingEntry[] = [
     label: kind,
     blurb: `what sako says when someone ${kind === 'join' ? 'joins' : kind === 'leave' ? 'leaves' : 'boosts'} !`,
     command: '/events set',
-    knobs: ['response', 'channel'],
+    knobs: ['reply', 'channel'],
     render(guildId: string): string[] {
       const responder = getEventResponder(guildId, kind);
       const channelId = getGuildSetting(guildId, eventChannelKey(kind));
       return [
-        responder ? 'message set' : 'no message yet',
+        responder ? 'reply set' : 'no reply yet',
         channelId ? `→ ${channelMention(channelId)}` : '→ nowhere !',
       ];
     },

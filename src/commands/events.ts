@@ -44,11 +44,11 @@ export const events: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('set')
-        .setDescription('set the message for an event')
+        .setDescription('set the reply for an event')
         .addStringOption(eventOption)
         .addStringOption((o) =>
           o
-            .setName('response')
+            .setName('reply')
             .setDescription('what sako sends. variables work here !')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
@@ -57,7 +57,7 @@ export const events: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('channel')
-        .setDescription('where messages for an event go')
+        .setDescription('where replies for an event go')
         .addStringOption(eventOption)
         .addChannelOption((o) =>
           o
@@ -108,7 +108,7 @@ export const events: SlashCommand = {
         : (interaction.options.getString('event', true) as EventKind);
 
     if (sub === 'set' && kind) {
-      const response = interaction.options.getString('response', true);
+      const response = interaction.options.getString('reply', true);
 
       const issues = templateIssues(response);
       if (issues) {
@@ -136,7 +136,7 @@ export const events: SlashCommand = {
       }
 
       await interaction.reply({
-        content: [`✦ set the ${kind} message :3`, ...notes].join('\n'),
+        content: [`✦ set the ${kind} reply :3`, ...notes].join('\n'),
       });
       return;
     }
@@ -146,7 +146,7 @@ export const events: SlashCommand = {
       setGuildSetting(guildId, eventChannelKey(kind), channel.id);
 
       await interaction.reply({
-        content: `✦ ${kind} messages will go to ${channel.toString()} !`,
+        content: `✦ ${kind} replies will go to ${channel.toString()} !`,
       });
       return;
     }
@@ -156,14 +156,14 @@ export const events: SlashCommand = {
 
       if (!responder) {
         await interaction.reply({
-          content: `no ${kind} message set yet. make one with ${inlineCode('/events set')} !`,
+          content: `no ${kind} reply set yet. make one with ${inlineCode('/events set')} !`,
         });
         return;
       }
 
       const channelId = getGuildSetting(guildId, eventChannelKey(kind));
       const embed = serverEmbed(interaction.guild)
-        .setTitle(`✦ ${kind} message`)
+        .setTitle(`✦ ${kind} reply`)
         .setDescription(
           `${codeBlock(responder.response)}\n-# fire it for real with ${inlineCode('/events test')}`,
         )
@@ -182,15 +182,15 @@ export const events: SlashCommand = {
 
       await interaction.reply({
         content: removed
-          ? `removed the ${kind} message.`
-          : `no ${kind} message to remove.`,
+          ? `removed the ${kind} reply.`
+          : `no ${kind} reply to remove.`,
       });
       return;
     }
 
     if (sub === 'view') {
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ event messages')
+        .setTitle('✦ event replies')
         .setDescription(
           `-# an event with no channel never fires,, try ${inlineCode('/events test')}`,
         )
@@ -203,7 +203,7 @@ export const events: SlashCommand = {
             );
             return {
               name: eventKind,
-              value: `${responder ? '✓ message set' : '✗ no message'}\n${channelId ? `→ ${channelMention(channelId)}` : '→ nowhere !'}`,
+              value: `${responder ? '✓ reply set' : '✗ no reply'}\n${channelId ? `→ ${channelMention(channelId)}` : '→ nowhere !'}`,
               inline: true,
             };
           }),
@@ -223,7 +223,7 @@ export const events: SlashCommand = {
       const channelId = getGuildSetting(guildId, eventChannelKey(kind));
       const replies: Record<typeof outcome, string> = {
         fired: `✧･ﾟ fired a test ${kind} ! check ${channelId ? channelMention(channelId) : 'the channel'} :3c`,
-        'no-template': `no ${kind} message set yet. make one with ${inlineCode('/events set')} !`,
+        'no-template': `no ${kind} reply set yet. make one with ${inlineCode('/events set')} !`,
         'no-channel': `no channel for ${kind} yet ! set one with ${inlineCode('/events channel')}`,
         blocked: `a guard blocked it (a cooldown maybe?), nothing was sent`,
       };
