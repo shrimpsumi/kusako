@@ -32,7 +32,7 @@ function channelBadge(arg: string): string {
   return `#${trimmed.replace(/^#/, '')}`;
 }
 
-function templateTraits(response: string): {
+export function templateTraits(response: string): {
   badges: string[];
   cooldown: string | null;
   does: string[];
