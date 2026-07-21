@@ -64,6 +64,21 @@ export function getAutoresponder(
   return row ? toModel(row) : null;
 }
 
+export function listAllTemplates(
+  guildId: string,
+): Array<{ label: string; response: string }> {
+  const rows = db()
+    .prepare(
+      'SELECT * FROM autoresponders WHERE guild_id = ? ORDER BY trigger_key',
+    )
+    .all(guildId) as Row[];
+
+  return rows.map((row) => ({
+    label: row.match_mode === 'event' ? row.trigger_key : `.${row.trigger}`,
+    response: row.response,
+  }));
+}
+
 export function listAutoresponders(guildId: string): Autoresponder[] {
   const rows = db()
     .prepare(

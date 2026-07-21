@@ -32,7 +32,11 @@ import {
   type EmbedData,
   type EmbedRecord,
 } from '../embeds.js';
-import { colors, NO_DMS } from '../style.js';
+import { colors, serverEmbed, NO_DMS } from '../style.js';
+import { listAllTemplates } from '../autoresponder/store.js';
+import { listItems } from '../items.js';
+import { parse } from '../autoresponder/parser.js';
+import type { PlaceholderNode } from '../autoresponder/ast.js';
 
 const NAME_MAX = 50;
 const JSON_MAX = 6000;
@@ -227,6 +231,95 @@ function previewOf(data: EmbedData): { embed: APIEmbed; hidden: string[] } {
   return { embed, hidden };
 }
 
+interface EmbedUsage {
+  users: string[];
+  dynamic: number;
+}
+
+function usageIndex(guildId: string): Map<string, EmbedUsage> {
+  const index = new Map<string, EmbedUsage>();
+  let dynamic = 0;
+
+  const sources = [
+    ...listAllTemplates(guildId),
+    ...listItems(guildId)
+      .filter((item) => item.useReply)
+      .map((item) => ({
+        label: `${item.name} (item)`,
+        response: item.useReply!,
+      })),
+  ];
+
+  for (const source of sources) {
+    const names = parse(source.response)
+      .filter(
+        (node): node is PlaceholderNode =>
+          node.kind === 'placeholder' && node.name === 'embed',
+      )
+      .map((node) => (node.args[0] ?? '').trim())
+      .filter((arg) => arg !== '');
+
+    for (const name of names) {
+      if (name.startsWith('#')) continue;
+      if (name.includes('[')) {
+        dynamic += 1;
+        continue;
+      }
+
+      const nameKey = name.toLowerCase();
+      const entry = index.get(nameKey) ?? { users: [], dynamic: 0 };
+      if (!entry.users.includes(source.label)) entry.users.push(source.label);
+      index.set(nameKey, entry);
+    }
+  }
+
+  if (dynamic > 0) {
+    for (const entry of index.values()) entry.dynamic = dynamic;
+    if (index.size === 0) index.set('', { users: [], dynamic });
+  }
+
+  return index;
+}
+
+function structureOf(data: EmbedData): string[] {
+  const parts: string[] = [];
+  if (data.title) parts.push('title');
+  if (data.description) parts.push('description');
+  if (data.author) parts.push('author');
+  if (data.footer) parts.push('footer');
+  if (data.image) parts.push('image');
+  if (data.thumbnail) parts.push('thumbnail');
+  if (data.fields?.length) {
+    parts.push(
+      data.fields.length === 1 ? '1 field' : `${data.fields.length} fields`,
+    );
+  }
+  if (data.color !== undefined) parts.push('custom color');
+  return parts;
+}
+
+function usageLine(usage: EmbedUsage | undefined): string {
+  if (!usage || usage.users.length === 0) return 'not used anywhere yet';
+
+  const shown = usage.users.slice(0, 3).join(' ━ ');
+  const extra =
+    usage.users.length > 3 ? ` +${usage.users.length - 3} more` : '';
+  return `used by ${shown}${extra}`;
+}
+
+function confirmRow(nameKey: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`embeds:confirmremove:${nameKey}`)
+      .setLabel('delete it')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`embeds:keep:${nameKey}`)
+      .setLabel('nevermind')
+      .setStyle(ButtonStyle.Secondary),
+  );
+}
+
 function buttonRows(nameKey: string): ActionRowBuilder<ButtonBuilder>[] {
   const section = (id: string, label: string) =>
     new ButtonBuilder()
@@ -333,6 +426,38 @@ export async function handleEmbedComponents(
       content: 'you need **manage server** to edit embeds !',
       flags: MessageFlags.Ephemeral,
     });
+    return;
+  }
+
+  if (sectionId === 'keep' || sectionId === 'confirmremove') {
+    if (!interaction.isButton()) return;
+
+    if (sectionId === 'keep') {
+      const embed = serverEmbed(interaction.guild)
+        .setTitle('phew !')
+        .setDescription(
+          `${inlineCode(nameKey)} is staying right where it is :3`,
+        );
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    const existing = getEmbed(interaction.guildId, nameKey);
+    const embed = serverEmbed(interaction.guild);
+
+    if (!existing) {
+      embed
+        .setTitle('✦ already gone !')
+        .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
+    } else {
+      deleteEmbed(interaction.guildId, nameKey);
+      embed
+        .setTitle('✦ embed deleted !')
+        .setDescription(`deleted the ${inlineCode(existing.name)} embed.`);
+    }
+
+    await interaction.update({ embeds: [embed], components: [] });
     return;
   }
 
@@ -506,7 +631,7 @@ export const embeds: SlashCommand = {
     ) as SlashCommandBuilder,
 
   async execute(interaction) {
-    if (!interaction.inGuild()) {
+    if (!interaction.inCachedGuild()) {
       await interaction.reply({
         content: NO_DMS,
       });
@@ -577,11 +702,57 @@ export const embeds: SlashCommand = {
     if (sub === 'list') {
       const all = listEmbeds(guildId);
 
-      await interaction.reply({
-        content: all.length
-          ? `**embeds (${all.length}):**\n${all.map((record) => `• ${inlineCode(record.name)}`).join('\n')}`
-          : 'no embeds saved yet. make one with /embeds add !',
-      });
+      if (all.length === 0) {
+        const embed = serverEmbed(interaction.guild)
+          .setTitle('no embeds yet !')
+          .setDescription(
+            `nothing saved here,, make your first one with ${inlineCode('/embeds add')} c:`,
+          );
+
+        await interaction.reply({ embeds: [embed] });
+        return;
+      }
+
+      const usage = usageIndex(guildId);
+      const header = `꒰ saved embeds ꒱ *${all.length} of them !*`;
+      const hint = `⁀જ➣ preview one with ${inlineCode('/embeds show <name>')}`;
+
+      const blocks: string[] = [];
+      let hidden = 0;
+      for (const record of all) {
+        const structure = structureOf(record.data);
+        const lines = [`ᯓ➤ **${record.name}**`];
+        lines.push(
+          structure.length
+            ? `-# ✧ ${structure.join(' ━ ')}`
+            : '-# ✧ still empty,, nothing in it yet',
+        );
+        lines.push(`-# ✧ ${usageLine(usage.get(record.nameKey))}`);
+        const block = lines.join('\n');
+
+        const projected = [header, ...blocks, block, hint].join('\n\n');
+        if (projected.length > EMBED_LIMITS.description) {
+          hidden = all.length - blocks.length;
+          break;
+        }
+        blocks.push(block);
+      }
+
+      const dynamic = [...usage.values()].reduce(
+        (max, entry) => Math.max(max, entry.dynamic),
+        0,
+      );
+      const footer = [
+        hidden ? `${hidden} more didn't fit` : null,
+        dynamic ? `${dynamic} more picked by a capture at send time` : null,
+      ].filter((part) => part !== null);
+
+      const embed = serverEmbed(interaction.guild).setDescription(
+        [header, ...blocks, hint].join('\n\n'),
+      );
+      if (footer.length) embed.setFooter({ text: footer.join(' ━━━ ') });
+
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
@@ -591,7 +762,7 @@ export const embeds: SlashCommand = {
 
       if (!record) {
         await interaction.reply({
-          content: `no embed named ${inlineCode(name)} found.`,
+          content: `no embed named ${inlineCode(name)} ! see them all with ${inlineCode('/embeds list')}`,
         });
         return;
       }
@@ -609,12 +780,35 @@ export const embeds: SlashCommand = {
 
     if (sub === 'remove') {
       const name = interaction.options.getString('name', true);
-      const removed = deleteEmbed(guildId, name);
+      const record = getEmbed(guildId, name);
+
+      if (!record) {
+        await interaction.reply({
+          content: `no embed named ${inlineCode(name)} ! see them all with ${inlineCode('/embeds list')}`,
+        });
+        return;
+      }
+
+      const usage = usageIndex(guildId).get(record.nameKey);
+      const stakes =
+        usage && usage.users.length > 0
+          ? `-# ✧ ${usageLine(usage)},, those will show the tag as plain text instead`
+          : '-# ✧ nothing references it right now';
+
+      const embed = serverEmbed(interaction.guild)
+        .setTitle('✦ delete this embed ?')
+        .setDescription(
+          [
+            `ᯓ➤ **${record.name}**`,
+            stakes,
+            '',
+            "there's no undo,, you'd have to build it again from scratch :c",
+          ].join('\n'),
+        );
 
       await interaction.reply({
-        content: removed
-          ? `removed the ${inlineCode(name)} embed.`
-          : `no embed named ${inlineCode(name)} to remove.`,
+        embeds: [embed],
+        components: [confirmRow(record.nameKey)],
       });
       return;
     }
