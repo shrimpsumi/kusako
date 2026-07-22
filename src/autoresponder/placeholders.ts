@@ -188,6 +188,7 @@ export const placeholders = new Map<string, Resolver>([
   ],
   ['channel', (ctx) => ctx.channel.toString()],
   ['channel.name', (ctx) => ctx.channel.name],
+  ['channel.id', (ctx) => ctx.channel.id],
   [
     'channel.createdat',
     (ctx) => {
