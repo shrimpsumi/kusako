@@ -70,6 +70,7 @@ export function registerMessageCreate(client: SakoClient): void {
             member: message.member,
             guild: message.guild,
             channel: message.channel,
+            message,
             messageArgs: extractArgs(
               message.content,
               responder.trigger,

@@ -70,13 +70,16 @@ async function renderInline(
       continue;
     }
 
-    const resolver = placeholders.get(node.name);
-    if (!resolver) {
+    const placeholder = placeholders.get(node.name);
+    if (!placeholder) {
       out += node.raw;
       continue;
     }
     try {
-      out += await resolver(ctx, interpolateArgs(node.args, captures));
+      out += await placeholder.resolve(
+        ctx,
+        interpolateArgs(node.args, captures),
+      );
     } catch {
       out += node.raw;
     }
@@ -400,13 +403,13 @@ export async function evaluate(
       continue;
     }
 
-    const resolver = placeholders.get(node.name);
-    if (!resolver) {
+    const placeholder = placeholders.get(node.name);
+    if (!placeholder) {
       current += node.raw;
       continue;
     }
     try {
-      current += await resolver(ctx, args);
+      current += await placeholder.resolve(ctx, args);
     } catch {
       current += node.raw;
     }

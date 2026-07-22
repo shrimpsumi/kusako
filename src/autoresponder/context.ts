@@ -1,4 +1,9 @@
-import type { Guild, GuildMember, GuildTextBasedChannel } from 'discord.js';
+import type {
+  Guild,
+  GuildMember,
+  GuildTextBasedChannel,
+  Message,
+} from 'discord.js';
 
 export class PendingEffects {
   private balances = new Map<string, number>();
@@ -31,6 +36,7 @@ export interface RenderContext {
   member: GuildMember;
   guild: Guild;
   channel: GuildTextBasedChannel;
+  message?: Message;
   messageArgs?: string[];
   pending?: PendingEffects;
 }
