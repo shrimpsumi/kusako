@@ -30,6 +30,8 @@ import type { Node, PlaceholderNode } from '../autoresponder/ast.js';
 import { templateIssues } from '../autoresponder/validate.js';
 import { evaluate } from '../autoresponder/evaluate.js';
 import { deliver } from '../autoresponder/deliver.js';
+import { paginate, applyPage } from '../pagination.js';
+import { registerPage } from '../pageRegistry.js';
 
 const NAME_MAX = 50;
 const DESCRIPTION_MAX = 200;
@@ -171,6 +173,51 @@ export async function handleItemComponents(
 
   await interaction.update({ embeds: [embed], components: [] });
 }
+
+function itemsPage(guild: Guild, _userId: string, page: number) {
+  const all = listItems(guild.id);
+
+  if (all.length === 0) {
+    const embed = serverEmbed(guild)
+      .setTitle('✦ server items (0)')
+      .setDescription(
+        `no items yet. make one with ${inlineCode('/items add')} c:`,
+      );
+
+    return { embeds: [embed], components: [] };
+  }
+
+  const header = `꒰ server items ꒱ *${all.length} of them !*`;
+  const hint = `⁀જ➣ look closer with ${inlineCode('/items info <name>')}`;
+
+  const blocks = all.map((item) => {
+    const traits = [
+      item.useReply ? 'usable' : null,
+      item.giftable ? 'giftable' : null,
+    ].filter((trait) => trait !== null);
+
+    const circulation = getCirculation(guild.id, item.name);
+    const meta = [
+      traits.length ? traits.join(' ━ ') : null,
+      circulation > 0
+        ? `${circulation.toLocaleString('en-US')} out there`
+        : null,
+    ].filter((part) => part !== null);
+
+    const lines = [`${item.emoji ?? '📦'} **${item.name}**`];
+    if (item.description) lines.push(`-# ✧ ${item.description}`);
+    if (meta.length) lines.push(`-# ✧ ${meta.join(' ⊹ ')}`);
+    return lines.join('\n');
+  });
+
+  const current = paginate(blocks, header, hint, page);
+  const embed = serverEmbed(guild);
+  const components = applyPage(embed, 'items', current);
+
+  return { embeds: [embed], components };
+}
+
+registerPage('items', itemsPage);
 
 export async function respondWithItemNames(
   interaction: AutocompleteInteraction,
@@ -506,17 +553,9 @@ export const items: SlashCommand = {
     }
 
     if (sub === 'list') {
-      const all = listItems(guildId);
-
-      const embed = serverEmbed(interaction.guild)
-        .setTitle(`✦ server items (${all.length}) !`)
-        .setDescription(
-          all.length
-            ? all.map((i) => `${i.emoji ?? '📦'} **${i.name}**`).join('\n')
-            : `no items yet. make one with ${inlineCode('/items add')} c:`,
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(
+        itemsPage(interaction.guild, interaction.user.id, 0),
+      );
       return;
     }
 
