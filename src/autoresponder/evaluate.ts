@@ -49,6 +49,7 @@ export interface MessageActions {
   sendToChannelId: string | null;
   roleActions: Array<{ add: boolean; roleId: string; userId: string }>;
   nickActions: Array<{ userId: string; nick: string }>;
+  deleteReplyAfter: number | null;
 }
 
 export type EvalResult =
@@ -192,6 +193,7 @@ export async function evaluate(
     sendToChannelId: null,
     roleActions: [],
     nickActions: [],
+    deleteReplyAfter: null,
   };
 
   const silent = nodes.some(
@@ -385,6 +387,11 @@ export async function evaluate(
         continue;
       }
       actions.nickActions.push({ userId: targetId, nick });
+      continue;
+    }
+
+    if (node.name === 'delete_reply') {
+      actions.deleteReplyAfter = clampDuration(parseAmount(args[0] ?? ''));
       continue;
     }
 

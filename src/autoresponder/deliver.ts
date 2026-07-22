@@ -1,6 +1,6 @@
 import type { GuildMember, GuildTextBasedChannel, Message } from 'discord.js';
 
-import { scheduleMessage } from '../scheduler.js';
+import { scheduleMessage, scheduleDeletion } from '../scheduler.js';
 import { logger } from '../logger.js';
 import type { Segment, MessageActions } from './evaluate.js';
 
@@ -52,7 +52,13 @@ export async function deliver(
           });
           firstSent ??= sent;
         } else {
-          scheduleMessage(destination.id, content, offset, segment.embeds);
+          scheduleMessage(
+            destination.id,
+            content,
+            offset,
+            segment.embeds,
+            target.member.guild.id,
+          );
         }
       } catch (err) {
         if (!actions.dm) throw err;
@@ -102,6 +108,15 @@ export async function deliver(
     } catch (err) {
       logger.warn({ err, user: action.userId }, 'setnick failed');
     }
+  }
+
+  if (actions.deleteReplyAfter !== null && firstSent && !actions.dm) {
+    scheduleDeletion(
+      firstSent.channelId,
+      firstSent.id,
+      actions.deleteReplyAfter,
+      target.member.guild.id,
+    );
   }
 
   if (actions.deleteTrigger && target.triggerMessage) {

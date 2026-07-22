@@ -77,6 +77,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   const optionCounts = new Map<string, number>();
   let boundaries = 0;
   let cooldowns = 0;
+  let deleteReplies = 0;
   let reactions = 0;
   let embedTags = 0;
   let roleTags = 0;
@@ -176,6 +177,15 @@ export function validateTemplate(nodes: Node[]): string[] {
         errors.push('only one {cooldown} per autoresponder !');
       }
       checkDuration(node.args[0], 'cooldown', 1, errors);
+      continue;
+    }
+
+    if (node.name === 'delete_reply') {
+      deleteReplies += 1;
+      if (deleteReplies === 2) {
+        errors.push('only one {delete_reply} per autoresponder !');
+      }
+      checkDuration(node.args[0], 'delete_reply', 1, errors);
       continue;
     }
 
