@@ -3,7 +3,7 @@ import { parse } from './parser.js';
 import { generators, RANGE_FORMAT, WEIGHTED_OPTION } from './generators.js';
 import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 import { parseColor } from '../embeds.js';
-import { ARG_TYPES } from './guards.js';
+import { ARG_TYPES, resolvePermArg } from './guards.js';
 import { placeholders, targetArgIndex } from './placeholders.js';
 
 const MAX_SEGMENTS = 3;
@@ -286,6 +286,15 @@ export function validateTemplate(nodes: Node[]): string[] {
       continue;
     }
 
+    if (node.name === 'requireperm' || node.name === 'denyperm') {
+      if (resolvePermArg(node.args[0] ?? '') === null) {
+        errors.push(
+          `{${node.name}} needs a permission, like {${node.name}:manage_server} or {${node.name}:manage messages}`,
+        );
+      }
+      continue;
+    }
+
     if (node.name === 'denychannel') {
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push(
@@ -317,6 +326,14 @@ export function validateTemplate(nodes: Node[]): string[] {
           '{denyrole} needs a role, like {denyrole:@mischievous} or a role id',
         );
       }
+      continue;
+    }
+
+    if (node.name === 'setnick') {
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push('{setnick} needs a nickname, like {setnick:a real cutie}');
+      }
+      checkTargetArg(node.args[1], 'setnick', errors);
       continue;
     }
 

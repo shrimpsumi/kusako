@@ -1,3 +1,5 @@
+import { PermissionFlagsBits, type PermissionsString } from 'discord.js';
+
 import { getBalance, getCurrency } from '../economy.js';
 import { getItem, getQuantity } from '../items.js';
 import type { EvalMeta, RenderContext } from './context.js';
@@ -56,6 +58,19 @@ export async function resolveMemberArg(ctx: RenderContext, raw: string) {
     ctx.guild.members.cache.get(id) ??
     (await ctx.guild.members.fetch(id).catch(() => null))
   );
+}
+
+const normalizePerm = (raw: string) => raw.toLowerCase().replace(/[\s_]/g, '');
+
+const PERM_NAMES = new Map<string, PermissionsString>([
+  ['manageserver', 'ManageGuild'],
+  ...Object.keys(PermissionFlagsBits).map(
+    (name) => [normalizePerm(name), name as PermissionsString] as const,
+  ),
+]);
+
+export function resolvePermArg(raw: string): PermissionsString | null {
+  return PERM_NAMES.get(normalizePerm(raw.trim())) ?? null;
 }
 
 export const ARG_TYPES = new Map<
@@ -280,6 +295,32 @@ export const guards = new Map<string, Guard>([
       const id = userIdOf(args[0] ?? '');
       if (id && meta.userId === id) {
         return { ok: false, message: "this one isn't for you c:" };
+      }
+      return { ok: true };
+    },
+  ],
+  [
+    'requireperm',
+    (_meta, args, ctx) => {
+      const perm = resolvePermArg(args[0] ?? '');
+      if (!perm) {
+        return {
+          ok: false,
+          message: 'this autoresponder has a broken {requireperm} tag !',
+        };
+      }
+
+      if (ctx.member.permissions.has(perm)) return { ok: true };
+
+      return { ok: false, message: "you don't have permission to do that !" };
+    },
+  ],
+  [
+    'denyperm',
+    (_meta, args, ctx) => {
+      const perm = resolvePermArg(args[0] ?? '');
+      if (perm && ctx.member.permissions.has(perm)) {
+        return { ok: false, message: "you can't use this one c:" };
       }
       return { ok: true };
     },
