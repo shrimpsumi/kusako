@@ -48,6 +48,7 @@ export interface MessageActions {
   dm: boolean;
   sendToChannelId: string | null;
   roleActions: Array<{ add: boolean; roleId: string; userId: string }>;
+  nickActions: Array<{ userId: string; nick: string }>;
 }
 
 export type EvalResult =
@@ -190,6 +191,7 @@ export async function evaluate(
     dm: false,
     sendToChannelId: null,
     roleActions: [],
+    nickActions: [],
   };
 
   const silent = nodes.some(
@@ -370,6 +372,19 @@ export async function evaluate(
         roleId: role.id,
         userId: targetId,
       });
+      continue;
+    }
+
+    if (node.name === 'setnick') {
+      const nick = (args[0] ?? '').trim();
+      const targetRaw = (args[1] ?? '').trim();
+      const targetId =
+        targetRaw.length > 0 ? userIdOf(targetRaw) : ctx.member.id;
+      if (nick.length === 0 || !targetId) {
+        current += node.raw;
+        continue;
+      }
+      actions.nickActions.push({ userId: targetId, nick });
       continue;
     }
 

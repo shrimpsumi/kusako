@@ -96,6 +96,14 @@ export async function deliver(
     }
   }
 
+  for (const action of actions.nickActions) {
+    try {
+      await members.edit(action.userId, { nick: action.nick });
+    } catch (err) {
+      logger.warn({ err, user: action.userId }, 'setnick failed');
+    }
+  }
+
   if (actions.deleteTrigger && target.triggerMessage) {
     try {
       await target.triggerMessage.delete();

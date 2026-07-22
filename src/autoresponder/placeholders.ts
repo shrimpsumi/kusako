@@ -66,6 +66,14 @@ function channelOf(
   return channel;
 }
 
+const BOOST_THRESHOLDS = [2, 7, 14];
+const MAX_LEVEL_REACHED = 'max level reached !';
+
+function nextBoostLevel(ctx: RenderContext): number | null {
+  const tier = ctx.guild.premiumTier;
+  return tier >= BOOST_THRESHOLDS.length ? null : tier + 1;
+}
+
 function botCount(ctx: RenderContext): number {
   return ctx.guild.members.cache.filter((m) => m.user.bot).size;
 }
@@ -321,6 +329,39 @@ export const placeholders = new Map<string, Placeholder>([
   [
     'server.boostcount',
     { resolve: (ctx) => (ctx.guild.premiumSubscriptionCount ?? 0).toString() },
+  ],
+  [
+    'server.nextboostlevel',
+    {
+      resolve: (ctx) => {
+        const next = nextBoostLevel(ctx);
+        return next === null ? MAX_LEVEL_REACHED : next.toString();
+      },
+    },
+  ],
+  [
+    'server.nextboostlevel.required',
+    {
+      resolve: (ctx) => {
+        const next = nextBoostLevel(ctx);
+        return next === null
+          ? MAX_LEVEL_REACHED
+          : BOOST_THRESHOLDS[next - 1]!.toString();
+      },
+    },
+  ],
+  [
+    'server.nextboostlevel.until_required',
+    {
+      resolve: (ctx) => {
+        const next = nextBoostLevel(ctx);
+        if (next === null) return MAX_LEVEL_REACHED;
+        const need =
+          BOOST_THRESHOLDS[next - 1]! -
+          (ctx.guild.premiumSubscriptionCount ?? 0);
+        return Math.max(0, need).toString();
+      },
+    },
   ],
   [
     'server.icon',
