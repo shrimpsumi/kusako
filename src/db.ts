@@ -91,12 +91,14 @@ CREATE TABLE IF NOT EXISTS ar_cooldowns (
     ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS scheduled_messages (
+CREATE TABLE IF NOT EXISTS scheduled_tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  channel_id TEXT NOT NULL,
-  content TEXT NOT NULL,
-  send_at INTEGER NOT NULL,
-  created_at INTEGER NOT NULL
+  guild_id TEXT,
+  kind TEXT NOT NULL,
+  channel_id TEXT,
+  run_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  payload TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS shop_listings (
@@ -139,8 +141,8 @@ CREATE TABLE IF NOT EXISTS embeds (
   PRIMARY KEY (guild_id, name_key)
 );
 
-CREATE INDEX IF NOT EXISTS idx_scheduled_messages_send_at
-  ON scheduled_messages (send_at);
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_run_at
+  ON scheduled_tasks (run_at);
 `;
 
 let instance: Database.Database | null = null;
@@ -152,10 +154,24 @@ function migrate(database: Database.Database): void {
       .all() as Array<{ name: string }>;
     return columns.some((c) => c.name === column);
   };
+  const hasTable = (table: string): boolean =>
+    database
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table) !== undefined;
 
-  if (!hasColumn('scheduled_messages', 'embeds_json')) {
-    database.exec('ALTER TABLE scheduled_messages ADD COLUMN embeds_json TEXT');
+  if (hasTable('scheduled_messages')) {
+    const embedsCol = hasColumn('scheduled_messages', 'embeds_json')
+      ? 'embeds_json'
+      : 'NULL';
+    database.exec(
+      `INSERT INTO scheduled_tasks (guild_id, kind, channel_id, run_at, created_at, payload)
+       SELECT NULL, 'send', channel_id, send_at, created_at,
+         json_object('content', content, 'embeds', ${embedsCol})
+       FROM scheduled_messages`,
+    );
+    database.exec('DROP TABLE scheduled_messages');
   }
+
   if (!hasColumn('items', 'use_reply')) {
     database.exec('ALTER TABLE items ADD COLUMN use_reply TEXT');
   }
