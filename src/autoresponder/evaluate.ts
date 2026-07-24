@@ -35,6 +35,8 @@ import {
   formatDuration,
 } from './args.js';
 
+export const MAX_BUTTONS = 25;
+
 export interface Segment {
   content: string;
   delaySeconds: number;
@@ -50,6 +52,10 @@ export interface MessageActions {
   roleActions: Array<{ add: boolean; roleId: string; userId: string }>;
   nickActions: Array<{ userId: string; nick: string }>;
   deleteReplyAfter: number | null;
+  buttons: Array<
+    | { kind: 'responder'; name: string }
+    | { kind: 'link'; label: string; url: string }
+  >;
 }
 
 export type EvalResult =
@@ -194,6 +200,7 @@ export async function evaluate(
     roleActions: [],
     nickActions: [],
     deleteReplyAfter: null,
+    buttons: [],
   };
 
   const silent = nodes.some(
@@ -392,6 +399,31 @@ export async function evaluate(
 
     if (node.name === 'delete_reply') {
       actions.deleteReplyAfter = clampDuration(parseAmount(args[0] ?? ''));
+      continue;
+    }
+
+    if (node.name === 'addbutton') {
+      const name = (args[0] ?? '').trim();
+      if (name.length === 0 || actions.buttons.length >= MAX_BUTTONS) {
+        current += node.raw;
+        continue;
+      }
+      actions.buttons.push({ kind: 'responder', name });
+      continue;
+    }
+
+    if (node.name === 'addlinkbutton') {
+      const label = (args[0] ?? '').trim();
+      const url = (args[1] ?? '').trim();
+      if (
+        label.length === 0 ||
+        !URLISH.test(url) ||
+        actions.buttons.length >= MAX_BUTTONS
+      ) {
+        current += node.raw;
+        continue;
+      }
+      actions.buttons.push({ kind: 'link', label, url });
       continue;
     }
 
