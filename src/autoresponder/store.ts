@@ -74,7 +74,12 @@ export function listAllTemplates(
     .all(guildId) as Row[];
 
   return rows.map((row) => ({
-    label: row.match_mode === 'event' ? row.trigger_key : `.${row.trigger}`,
+    label:
+      row.match_mode === 'event'
+        ? row.trigger_key.startsWith(BUTTON_KEY_PREFIX)
+          ? `${row.trigger} (button)`
+          : row.trigger_key
+        : `.${row.trigger}`,
     response: row.response,
   }));
 }
@@ -260,4 +265,96 @@ export function listLevelResponders(
     }))
     .filter((entry) => Number.isSafeInteger(entry.level))
     .sort((a, b) => a.level - b.level);
+}
+
+export const BUTTON_KEY_PREFIX = 'button:';
+const BUTTON_CUSTOM_ID_PREFIX = 'br:';
+
+export function buttonTriggerKey(name: string): string {
+  return `${BUTTON_KEY_PREFIX}${key(name)}`;
+}
+
+export function buttonCustomId(name: string): string {
+  return `${BUTTON_CUSTOM_ID_PREFIX}${key(name)}`;
+}
+
+export function parseButtonCustomId(customId: string): string | null {
+  return customId.startsWith(BUTTON_CUSTOM_ID_PREFIX)
+    ? customId.slice(BUTTON_CUSTOM_ID_PREFIX.length)
+    : null;
+}
+
+export function getButtonResponder(
+  guildId: string,
+  name: string,
+): Autoresponder | null {
+  const row = db()
+    .prepare(
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .get(guildId, buttonTriggerKey(name)) as Row | undefined;
+
+  return row ? toModel(row) : null;
+}
+
+export function addButtonResponder(
+  guildId: string,
+  name: string,
+  response: string,
+): boolean {
+  const now = Date.now();
+  const result = db()
+    .prepare(
+      `INSERT OR IGNORE INTO autoresponders
+        (guild_id, trigger, trigger_key, response, match_mode, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'event', ?, ?)`,
+    )
+    .run(guildId, name.trim(), buttonTriggerKey(name), response, now, now);
+
+  return result.changes > 0;
+}
+
+export function editButtonResponder(
+  guildId: string,
+  name: string,
+  response: string,
+): boolean {
+  const result = db()
+    .prepare(
+      `UPDATE autoresponders SET response = ?, updated_at = ?
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .run(response, Date.now(), guildId, buttonTriggerKey(name));
+
+  return result.changes > 0;
+}
+
+export function removeButtonResponder(guildId: string, name: string): boolean {
+  const result = db()
+    .prepare(
+      `DELETE FROM autoresponders
+       WHERE guild_id = ? AND trigger_key = ? AND match_mode = 'event'`,
+    )
+    .run(guildId, buttonTriggerKey(name));
+
+  return result.changes > 0;
+}
+
+export function listButtonResponders(
+  guildId: string,
+): Array<{ name: string; responder: Autoresponder }> {
+  const rows = db()
+    .prepare(
+      `SELECT * FROM autoresponders
+       WHERE guild_id = ? AND match_mode = 'event' AND trigger_key LIKE ?`,
+    )
+    .all(guildId, `${BUTTON_KEY_PREFIX}%`) as Row[];
+
+  return rows
+    .map((row) => ({
+      name: row.trigger,
+      responder: toModel(row),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
