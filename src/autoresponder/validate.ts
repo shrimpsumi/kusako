@@ -5,6 +5,8 @@ import { parseAmount, DYNAMIC_ARG, YEAR_SECONDS } from './args.js';
 import { parseColor } from '../embeds.js';
 import { ARG_TYPES, resolvePermArg } from './guards.js';
 import { placeholders, targetArgIndex } from './placeholders.js';
+import { MAX_BUTTONS } from './evaluate.js';
+import { URLISH } from '../embeds.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
@@ -81,6 +83,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   let reactions = 0;
   let embedTags = 0;
   let roleTags = 0;
+  let buttons = 0;
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
@@ -186,6 +189,34 @@ export function validateTemplate(nodes: Node[]): string[] {
         errors.push('only one {delete_reply} per autoresponder !');
       }
       checkDuration(node.args[0], 'delete_reply', 1, errors);
+      continue;
+    }
+
+    if (node.name === 'addbutton') {
+      buttons += 1;
+      if (buttons === MAX_BUTTONS + 1) {
+        errors.push(`max ${MAX_BUTTONS} buttons per reply !`);
+      }
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push('{addbutton} needs a name, like {addbutton:verify}');
+      }
+      continue;
+    }
+
+    if (node.name === 'addlinkbutton') {
+      buttons += 1;
+      if (buttons === MAX_BUTTONS + 1) {
+        errors.push(`max ${MAX_BUTTONS} buttons per reply !`);
+      }
+      if ((node.args[0] ?? '').trim().length === 0) {
+        errors.push(
+          '{addlinkbutton} needs a label and a url, like {addlinkbutton:our site | https://frie.rent}',
+        );
+      } else if (!URLISH.test((node.args[1] ?? '').trim())) {
+        errors.push(
+          '{addlinkbutton} needs a real url (http/https), like {addlinkbutton:our site | https://frie.rent}',
+        );
+      }
       continue;
     }
 
