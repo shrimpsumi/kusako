@@ -266,9 +266,16 @@ export const autoresponders: SlashCommand = {
       const trigger = interaction.options.getString('trigger', true);
       const response = interaction.options.getString('reply', true);
 
-      if (trigger.trim().toLowerCase().startsWith('event:')) {
+      const lowerTrigger = trigger.trim().toLowerCase();
+      if (lowerTrigger.startsWith('event:')) {
         await interaction.reply({
           content: `trigger names starting with ${inlineCode('event:')} are reserved for ${inlineCode('/events')} !`,
+        });
+        return;
+      }
+      if (lowerTrigger.startsWith('button:')) {
+        await interaction.reply({
+          content: `trigger names starting with ${inlineCode('button:')} are reserved for ${inlineCode('/buttonresponders')} !`,
         });
         return;
       }
