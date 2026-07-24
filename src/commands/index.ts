@@ -16,6 +16,7 @@ import { levels } from './levels.js';
 import { level } from './level.js';
 import { modifylevel } from './modifylevel.js';
 import { send } from './send.js';
+import { buttonresponders } from './buttonresponders.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -34,4 +35,5 @@ export const commands: SlashCommand[] = [
   level,
   modifylevel,
   send,
+  buttonresponders,
 ];
