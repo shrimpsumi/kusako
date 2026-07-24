@@ -3,6 +3,7 @@ import { Events, MessageFlags } from 'discord.js';
 import type { SakoClient } from '../client.js';
 import { handleEmbedComponents } from '../commands/embeds.js';
 import { handleItemComponents } from '../commands/items.js';
+import { handleButtonResponderComponents } from '../commands/buttonresponders.js';
 import { handleSettingsComponents } from '../commands/settings.js';
 import { buildPage } from '../pageRegistry.js';
 import { logger } from '../logger.js';
@@ -26,6 +27,22 @@ export function registerInteractionCreate(client: SakoClient): void {
         await handleItemComponents(interaction);
       } catch (err) {
         logger.error({ err, id: interaction.customId }, 'item confirm failed');
+      }
+      return;
+    }
+
+    if (
+      interaction.isButton() &&
+      (interaction.customId.startsWith('br:') ||
+        interaction.customId.startsWith('buttonresponders:'))
+    ) {
+      try {
+        await handleButtonResponderComponents(interaction);
+      } catch (err) {
+        logger.error(
+          { err, id: interaction.customId },
+          'button responder failed',
+        );
       }
       return;
     }

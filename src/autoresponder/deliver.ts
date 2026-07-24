@@ -1,8 +1,40 @@
-import type { GuildMember, GuildTextBasedChannel, Message } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  type GuildMember,
+  type GuildTextBasedChannel,
+  type Message,
+} from 'discord.js';
 
 import { scheduleMessage, scheduleDeletion } from '../scheduler.js';
+import { buttonCustomId } from './store.js';
 import { logger } from '../logger.js';
 import type { Segment, MessageActions } from './evaluate.js';
+
+function buildButtonRows(
+  buttons: MessageActions['buttons'],
+): ActionRowBuilder<ButtonBuilder>[] {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  for (let i = 0; i < buttons.length; i += 5) {
+    const row = new ActionRowBuilder<ButtonBuilder>();
+    for (const button of buttons.slice(i, i + 5)) {
+      row.addComponents(
+        button.kind === 'link'
+          ? new ButtonBuilder()
+              .setStyle(ButtonStyle.Link)
+              .setLabel(button.label.slice(0, 80))
+              .setURL(button.url)
+          : new ButtonBuilder()
+              .setStyle(ButtonStyle.Secondary)
+              .setLabel(button.name.slice(0, 80))
+              .setCustomId(buttonCustomId(button.name)),
+      );
+    }
+    rows.push(row);
+  }
+  return rows;
+}
 
 export interface DeliveryTarget {
   member: GuildMember;
@@ -28,6 +60,9 @@ export async function deliver(
     : base;
 
   let firstSent: Message | null = null;
+  const buttonRows =
+    actions.buttons.length > 0 ? buildButtonRows(actions.buttons) : [];
+  let buttonsAttached = false;
 
   if (!destination) {
     if (target.triggerMessage) {
@@ -45,11 +80,14 @@ export async function deliver(
 
       try {
         if (offset === 0) {
+          const attachButtons = !buttonsAttached && buttonRows.length > 0;
           const sent = await destination.send({
             content: content.length > 0 ? content : undefined,
             embeds: segment.embeds,
+            components: attachButtons ? buttonRows : undefined,
             allowedMentions: { parse: ['users', 'roles'] },
           });
+          if (attachButtons) buttonsAttached = true;
           firstSent ??= sent;
         } else {
           scheduleMessage(
@@ -69,6 +107,15 @@ export async function deliver(
           });
         }
         break;
+      }
+    }
+
+    if (!buttonsAttached && buttonRows.length > 0) {
+      try {
+        const sent = await destination.send({ components: buttonRows });
+        firstSent ??= sent;
+      } catch (err) {
+        logger.warn({ err }, 'button-only message failed');
       }
     }
   }
