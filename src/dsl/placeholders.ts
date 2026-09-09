@@ -11,6 +11,7 @@ import type { RenderContext } from './context.js';
 import { resolveMemberArg, resolveChannelArg } from './guards.js';
 import { getXp, levelFromXp } from '../services/levels/store.js';
 import { botPool } from '../services/memberCache.js';
+import { ordinal } from '../utils/format.js';
 
 export type Resolver = (
   ctx: RenderContext,
@@ -39,13 +40,6 @@ export function targetArgIndex(kind: TargetKind): number {
 
 function discordTimestamp(ms: number): string {
   return `<t:${Math.floor(ms / 1000)}:R>`;
-}
-
-function ordinal(n: number): string {
-  const tens = n % 100;
-  if (tens >= 11 && tens <= 13) return `${n.toLocaleString('en-US')}th`;
-  const suffix = { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th';
-  return `${n.toLocaleString('en-US')}${suffix}`;
 }
 
 const INVENTORY_LINES = 15;
