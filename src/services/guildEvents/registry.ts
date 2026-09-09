@@ -7,6 +7,7 @@ import {
 
 import type { SakoClient } from '../../client.js';
 import { syncBoostState } from './store.js';
+import { startBirthdaySweep } from '../birthdays/fire.js';
 
 const BOOST_RECENT_MS = 5 * 60_000;
 
@@ -63,6 +64,16 @@ export const EVENTS = [
           return;
 
         await fire(newMember.guild, newMember);
+      });
+    },
+  },
+  {
+    id: 'birthday',
+    label: 'birthday',
+    blurb: "what sako says on someone's birthday !",
+    register(client: SakoClient, fire: FireEvent) {
+      client.once(Events.ClientReady, (ready) => {
+        startBirthdaySweep(ready, fire);
       });
     },
   },
