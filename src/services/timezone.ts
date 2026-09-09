@@ -47,6 +47,40 @@ export function timeZones(): string[] {
   return Intl.supportedValuesOf('timeZone');
 }
 
+const SUGGESTED_ZONES = [
+  'America/Los_Angeles',
+  'America/Denver',
+  'America/Chicago',
+  'America/New_York',
+  'America/Sao_Paulo',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Europe/Moscow',
+  'Africa/Lagos',
+  'Africa/Johannesburg',
+  'Asia/Dubai',
+  'Asia/Kolkata',
+  'Asia/Singapore',
+  'Asia/Tokyo',
+  'Asia/Seoul',
+  'Australia/Sydney',
+  'Pacific/Auckland',
+  'UTC',
+];
+
+export function timeZoneChoices(
+  focused: string,
+): { name: string; value: string }[] {
+  const needle = focused.trim().toLowerCase();
+  const pool =
+    needle.length === 0
+      ? SUGGESTED_ZONES
+      : timeZones().filter((zone) => zone.toLowerCase().includes(needle));
+
+  return pool.slice(0, 25).map((zone) => ({ name: zone, value: zone }));
+}
+
 export function getGuildTimezone(guildId: string): string {
   const stored = getGuildSetting(guildId, TIMEZONE_KEY);
   return stored && isValidTimeZone(stored) ? stored : DEFAULT_TIMEZONE;
