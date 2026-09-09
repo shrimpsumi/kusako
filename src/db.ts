@@ -255,6 +255,22 @@ CREATE TABLE IF NOT EXISTS boosters (
   PRIMARY KEY (guild_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS birthdays (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  month INTEGER NOT NULL,
+  day INTEGER NOT NULL,
+  year INTEGER,
+  timezone TEXT,
+  last_fired_year INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_birthdays_day
+  ON birthdays (month, day);
+
 CREATE TABLE IF NOT EXISTS global_balances (
   user_id TEXT NOT NULL,
   currency TEXT NOT NULL,
