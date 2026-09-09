@@ -143,7 +143,7 @@ kusako should have at least these permissions:
 - **manage nicknames**: `{setnick}`
 - **manage channels**: tickets, since she creates and archives channels
 
-only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here, unless you create an autoresponder to do so. you shouldn't need to hand her **administrator** for anything!
+only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here. you shouldn't need to hand her **administrator** for anything!
 
 > [!IMPORTANT]
 > **sako's role has to sit ABOVE any role she hands out** in your server's role list. if she's underneath it, the grant just quietly fails. she'll say so when she notices, but it's easily the most common "why isn't this working" !
