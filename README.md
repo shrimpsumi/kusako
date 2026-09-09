@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/stinkmage/assets@main/kusako-banner-transparent.png" width="680" alt="kusako" />
+  <img src="https://cdn.jsdelivr.net/gh/stinkmage/assets@main/kusakobaner-noshrimp-noshadow.png" width="680" alt="kusako" />
 </p>
 
 <p align="center">a discord bot for economy, levels, items, and custom autoresponder replies.</p>
