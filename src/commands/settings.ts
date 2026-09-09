@@ -25,33 +25,11 @@ import { formatDuration } from '../dsl/args.js';
 import {
   isValidTimeZone,
   setGuildTimezone,
-  timeZones,
+  timeZoneChoices,
   zonedParts,
   formatWallTime,
 } from '../services/timezone.js';
 import { serverEmbed, NO_DMS } from '../utils/style.js';
-
-const SUGGESTED_ZONES = [
-  'America/Los_Angeles',
-  'America/Denver',
-  'America/Chicago',
-  'America/New_York',
-  'America/Sao_Paulo',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Berlin',
-  'Europe/Moscow',
-  'Africa/Lagos',
-  'Africa/Johannesburg',
-  'Asia/Dubai',
-  'Asia/Kolkata',
-  'Asia/Singapore',
-  'Asia/Tokyo',
-  'Asia/Seoul',
-  'Australia/Sydney',
-  'Pacific/Auckland',
-  'UTC',
-];
 
 export const settings: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -160,14 +138,8 @@ export const settings: SlashCommand = {
     ) as SlashCommandBuilder,
 
   async autocomplete(interaction) {
-    const focused = interaction.options.getFocused().trim().toLowerCase();
-    const pool =
-      focused.length === 0
-        ? SUGGESTED_ZONES
-        : timeZones().filter((zone) => zone.toLowerCase().includes(focused));
-
     await interaction.respond(
-      pool.slice(0, 25).map((zone) => ({ name: zone, value: zone })),
+      timeZoneChoices(interaction.options.getFocused()),
     );
   },
 
