@@ -129,10 +129,26 @@ a full list of placeholders and examples can be found here: TODO
 
 ## development
 
-> [!NOTE]
-> sako isn't hosted publicly yet. until she is, this is how you get her.
+make an application in the [discord developer portal](https://discord.com/developers/applications), add a bot to it, and turn on the **server members** and **message content** intents.
 
-make an application in the [discord developer portal](https://discord.com/developers/applications), add a bot to it, and turn on the **server members** and **message content** intents. then:
+invite her with the **bot** and **applications.commands** scopes, using the OAuth2 URL generator in that same portal !
+
+kusako should have at least these permissions:
+
+- **view channels**, **send messages**, **embed links**, **attach files**, **read message history**
+- **add reactions**: `{react}` and `{reactreply}`
+- **use external emojis**: custom emoji in replies, buttons, and dropdowns
+- **manage messages**: `{deletetrigger}` and `{delete_reply}`
+- **manage roles**: `{addrole}`, `{removerole}`, `{temprole}`, `{togglerole}`, role menus, and level roles
+- **manage nicknames**: `{setnick}`
+- **manage channels**: tickets, since she creates and archives channels
+
+only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here, unless you create an autoresponder to do so. you shouldn't need to hand her **administrator** for anything!
+
+> [!IMPORTANT]
+> **sako's role has to sit ABOVE any role she hands out** in your server's role list. if she's underneath it, the grant just quietly fails. she'll say so when she notices, but it's easily the most common "why isn't this working" !
+
+then:
 
 ```sh
 pnpm i
@@ -146,16 +162,24 @@ CLIENT_ID=
 GUILD_ID=
 DB_PATH=
 OWNER_ID=
+LOG_LEVEL=
 ```
 
-`BOT_TOKEN` and `CLIENT_ID` are required. `GUILD_ID` is the server to register commands to while developing, but isn't required. `DB_PATH` defaults to `data/sako.db`. `OWNER_ID` unlocks the owner-only `;global` and `;status` text commands!
+`BOT_TOKEN` and `CLIENT_ID` are required. `GUILD_ID` is the server to register commands to while developing, but isn't required. `DB_PATH` defaults to `data/sako.db`. `OWNER_ID` unlocks the owner-only `;global` and `;status` text commands! `LOG_LEVEL` defaults to `info`,set to `debug` for a noisy version. there's a `.env.example` you can copy too !
 
 ```sh
 pnpm register
 pnpm dev
 ```
 
-`register` pushes the slash commands to your `GUILD_ID` server, and you'll need to run it again whenever you add or update commands, e.g., adding a subcommand. `pnpm register:global` pushes them globally.
+`register` pushes the slash commands to your `GUILD_ID` server, and you'll need to run it again whenever you add or update commands, e.g., adding a subcommand. `pnpm register:global` pushes them globally. sometimes your discord client won't immediately see new commands, a `CTRL + R` usually fixes that !
+
+`pnpm dev` watches and restarts her on every file change. to host her, compile, then run:
+
+```sh
+pnpm build
+pnpm start
+```
 
 > [!NOTE]
 > sako's home is the **[cardboard atelier](https://discord.gg/ytsuErErG5)**, an art and social server that doubles as her support hub. the server utilizes her features extensively, so feel free to join and look around for inspiration or get help!
