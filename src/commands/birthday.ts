@@ -174,16 +174,16 @@ export const birthday: SlashCommand = {
       const when = formatBirthday(entry.month, entry.day);
       const mark =
         sortKey(entry.month, entry.day) === todayKey ? ' :: today !!' : '';
-      return `ᯓ➤ <@${entry.userId}>\n-# ${when}${mark}`;
+      return `<@${entry.userId}>\n-# ﹒${when}${mark}`;
     });
 
     const embed = serverEmbed(interaction.guild).setDescription(
       [
-        `꒰ ${interaction.guild.name} ꒱ *${total} birthday${total === 1 ? '' : 's'}*`,
+        `*${total} birthday${total === 1 ? '' : 's'} added! here are upcoming ones:*`,
         '',
         blocks.join('\n\n'),
         '',
-        `⁀જ➣ add yours with ${commandMention('/birthday set')}`,
+        `add yours with ${commandMention('/birthday set')} !`,
       ].join('\n'),
     );
 
