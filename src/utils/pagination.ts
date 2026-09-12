@@ -7,10 +7,16 @@ import {
 
 import { EMBED_LIMITS } from '../services/embeds/store.js';
 
+export const MAX_PAGE_LINES = 36;
+
 export interface Page {
   description: string;
   index: number;
   total: number;
+}
+
+function lineCount(text: string): number {
+  return text.split('\n').length;
 }
 
 export function paginate(
@@ -23,19 +29,32 @@ export function paginate(
   const frame = [header, hint].filter((part) => part !== null);
   const budget = EMBED_LIMITS.description - frame.join('\n\n').length;
 
+  const frameLines =
+    (header !== null ? lineCount(header) + 1 : 0) +
+    (hint !== null ? lineCount(hint) + 1 : 0);
+  const lineBudget = MAX_PAGE_LINES - frameLines;
+  const gapLines = separator.split('\n').length - 2;
+
   const pages: string[][] = [];
   let current: string[] = [];
   let used = 0;
+  let usedLines = 0;
 
   for (const block of blocks) {
     const cost = block.length + separator.length;
-    if (current.length > 0 && used + cost > budget) {
+    const blockLines = lineCount(block);
+    if (
+      current.length > 0 &&
+      (used + cost > budget || usedLines + gapLines + blockLines > lineBudget)
+    ) {
       pages.push(current);
       current = [];
       used = 0;
+      usedLines = 0;
     }
     current.push(block);
     used += cost;
+    usedLines += blockLines + (current.length > 1 ? gapLines : 0);
   }
   if (current.length > 0) pages.push(current);
   if (pages.length === 0) pages.push([]);
