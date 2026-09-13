@@ -172,20 +172,16 @@ export const birthday: SlashCommand = {
 
     const blocks = upcoming.map((entry) => {
       const when = formatBirthday(entry.month, entry.day);
-      const mark =
-        sortKey(entry.month, entry.day) === todayKey ? ' :: today !!' : '';
-      return `<@${entry.userId}>\n-# ﹒${when}${mark}`;
+      const isToday = sortKey(entry.month, entry.day) === todayKey;
+      return `<@${entry.userId}>\n-# ﹒${when}${isToday ? ' :: today !!' : ''}`;
     });
 
-    const embed = serverEmbed(interaction.guild).setDescription(
-      [
-        `*${total} birthday${total === 1 ? '' : 's'} added! here are upcoming ones:*`,
-        '',
-        blocks.join('\n\n'),
-        '',
-        `add yours with ${commandMention('/birthday set')} !`,
-      ].join('\n'),
-    );
+    const hint = `<:arrowright:1545483910022959194> add yours with ${commandMention('/birthday set')} !`;
+
+    const embed = serverEmbed(interaction.guild)
+      .setTitle('upcoming birthdays !')
+      .setColor(0xc49f5f)
+      .setDescription([blocks.join('\n'), '', hint].join('\n'));
 
     await interaction.reply({ embeds: [embed] });
   },

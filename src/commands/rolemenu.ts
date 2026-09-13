@@ -302,7 +302,8 @@ async function runList(
     await interaction.reply({
       embeds: [
         serverEmbed(guild)
-          .setTitle('role menus (0)')
+          .setTitle('role menus !')
+          .setColor(0xaeb4c5)
           .setDescription(
             `none yet ! make one with ${commandMention('/rolemenu add')}`,
           ),
@@ -318,20 +319,20 @@ async function runList(
       menu.mode === 'single' ? 'one at a time' : null,
     ].filter((bit) => bit !== null);
 
-    return `ᯓ➤ **${menu.name}**\n-# ✧ ${bits.join(' ━ ')}`;
+    return `### ***${menu.name}***\n${bits.join(' · ')}`;
   });
+
+  const hint = [
+    `<:arrowright:1545483910022959194> drop one anywhere with ${inlineCode('{rolemenu:name}')}`,
+    '-# learn about role menus on the docs [soon] ! <:shrimpy:1548714907019518082>',
+  ].join('\n');
 
   await interaction.reply({
     embeds: [
-      serverEmbed(guild).setDescription(
-        [
-          `꒰ role menus ꒱ *${all.length} of them !*`,
-          '',
-          blocks.join('\n\n'),
-          '',
-          `⁀જ➣ drop one anywhere with ${inlineCode('{rolemenu:name}')}`,
-        ].join('\n'),
-      ),
+      serverEmbed(guild)
+        .setTitle('role menus !')
+        .setColor(0xaeb4c5)
+        .setDescription([blocks.join('\n'), '', hint].join('\n')),
     ],
   });
 }

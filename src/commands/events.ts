@@ -236,21 +236,24 @@ export const events: SlashCommand = {
     }
 
     if (sub === 'list') {
+      const blocks = EVENTS.map((event) => {
+        const reply = getEventReply(guildId, event.id);
+        const status = reply?.response ? 'reply set' : 'no reply';
+        const channel = reply?.channelId
+          ? channelMention(reply.channelId)
+          : 'nowhere';
+        return `### ***${event.label}***\n${status} · ${channel}`;
+      });
+
+      const hint = [
+        `<:arrowright:1545483910022959194> test one with ${commandMention('/events test')}`,
+        '-# an event with no channel never fires !',
+      ].join('\n');
+
       const embed = serverEmbed(interaction.guild)
-        .setTitle('event replies')
-        .setDescription(
-          `-# an event with no channel never fires... try ${commandMention('/events test')}`,
-        )
-        .addFields(
-          EVENTS.map((event) => {
-            const reply = getEventReply(guildId, event.id);
-            return {
-              name: event.label,
-              value: `${reply?.response ? '✓ reply set' : '✗ no reply'}\n${reply?.channelId ? `→ ${channelMention(reply.channelId)}` : '→ nowhere !'}`,
-              inline: true,
-            };
-          }),
-        );
+        .setTitle('event replies !')
+        .setColor(0xfae4e7)
+        .setDescription([blocks.join('\n'), '', hint].join('\n'));
 
       await interaction.reply({ embeds: [embed] });
       return;

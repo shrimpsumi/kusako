@@ -183,7 +183,8 @@ function itemsPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('server items (0)')
+      .setTitle('server items !')
+      .setColor(0xffe499)
       .setDescription(
         `no items yet. make one with ${inlineCode('/items add')} c:`,
       );
@@ -191,31 +192,28 @@ function itemsPage(guild: Guild, _userId: string, page: number) {
     return { embeds: [embed], components: [] };
   }
 
-  const header = `꒰ server items ꒱ *${all.length} of them !*`;
-  const hint = `⁀જ➣ look closer with ${inlineCode('/items info <name>')}`;
+  const hint = [
+    `<:arrowright:1545483910022959194> look closer with ${inlineCode('/items info <name>')}`,
+    '-# learn about items on the docs [soon] ! <:shrimpy:1548714907019518082>',
+  ].join('\n');
 
   const blocks = all.map((item) => {
     const traits = [
       item.useReply ? 'usable' : null,
       item.giftable ? 'giftable' : null,
     ].filter((trait) => trait !== null);
+    const summary = traits.length ? traits.join(' · ') : 'no traits';
 
-    const circulation = getCirculation(guild.id, item.name);
-    const meta = [
-      traits.length ? traits.join(' ━ ') : null,
-      circulation > 0
-        ? `${circulation.toLocaleString('en-US')} out there`
-        : null,
-    ].filter((part) => part !== null);
-
-    const lines = [`${item.emoji ?? '📦'} **${item.name}**`];
-    if (item.description) lines.push(`-# ✧ ${item.description}`);
-    if (meta.length) lines.push(`-# ✧ ${meta.join(' ⊹ ')}`);
+    const lines = [`### ***${item.emoji ?? '\u{1F4E6}'} ${item.name}***`];
+    if (item.description) lines.push(item.description);
+    lines.push(summary);
     return lines.join('\n');
   });
 
-  const current = paginate(blocks, header, hint, page);
-  const embed = serverEmbed(guild);
+  const current = paginate(blocks, null, hint, page, '\n');
+  const embed = serverEmbed(guild)
+    .setTitle('server items !')
+    .setColor(0xffe499);
   const components = applyPage(embed, 'items', current);
 
   return { embeds: [embed], components };

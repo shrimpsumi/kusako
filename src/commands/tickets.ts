@@ -379,7 +379,8 @@ async function runTypeList(
     await interaction.reply({
       embeds: [
         serverEmbed(guild)
-          .setTitle('ticket types (0)')
+          .setTitle('ticket types !')
+          .setColor(0xd9c679)
           .setDescription(
             `none yet ! make one with ${commandMention('/tickets add')}, then put its button somewhere with ${commandMention('/tickets panel')}`,
           ),
@@ -389,6 +390,7 @@ async function runTypeList(
   }
 
   const { live, archive } = getTicketCategories(guild.id);
+
   const blocks = all.map((type) => {
     const bits = [
       `${type.roleIds.length} role${type.roleIds.length === 1 ? '' : 's'}`,
@@ -398,25 +400,25 @@ async function runTypeList(
         : null,
     ].filter((bit) => bit !== null);
 
-    return `ᯓ➤ **${type.key}** · ${type.label}\n-# ✧ ${bits.join(' ━ ')}`;
+    return `### ***${type.key}*** · ${type.label}\n${bits.join(' · ')}`;
   });
 
   const where = [
     live ? `tickets open in <#${live}>` : 'no tickets category set',
     archive ? `closed ones move to <#${archive}>` : 'no archive category set',
-  ].join(' ━ ');
+  ].join(' · ');
+
+  const hint = [
+    `<:arrowright:1545483910022959194> post a panel with ${commandMention('/tickets panel')}`,
+    `-# ${where}`,
+  ].join('\n');
 
   await interaction.reply({
     embeds: [
-      serverEmbed(guild).setDescription(
-        [
-          `꒰ ticket types ꒱ *${all.length} of them !*`,
-          '',
-          blocks.join('\n\n'),
-          '',
-          `⁀જ➣ ${where}`,
-        ].join('\n'),
-      ),
+      serverEmbed(guild)
+        .setTitle('ticket types !')
+        .setColor(0xd9c679)
+        .setDescription([blocks.join('\n'), '', hint].join('\n')),
     ],
   });
 }
