@@ -1,0 +1,21 @@
+name: release changelog to discord
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  github-releases-to-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: github releases to discord
+        uses: SethCohen/github-releases-to-discord@v1.20.0
+        with:
+          webhook_url: ${{ secrets.WEBHOOK_URL }}
+          color: '2105893'
+          username: 'kusako releases'
+          avatar_url: 'https://cdn.discordapp.com/avatars/860733331532808213/fce048a3915af7a7f0b54798a22aa61d.webp'
+          content: '<@&1543060169854816416>'
+          footer_title: 'changelog'
+          footer_timestamp: true
+          reduce_headings: true
