@@ -57,7 +57,7 @@ function respondersPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('✦ autoresponders (0)')
+      .setTitle('autoresponders (0)')
       .setDescription(
         `no autoresponders yet,, make your first with ${inlineCode('/autoresponders add')}`,
       );
@@ -75,7 +75,7 @@ function respondersPage(guild: Guild, _userId: string, page: number) {
 
   const hint = `-# see one up close with ${inlineCode('/autoresponders show')}`;
   const current = paginate(blocks, null, hint, page, '\n');
-  const embed = serverEmbed(guild).setTitle(`✦ autoresponders (${all.length})`);
+  const embed = serverEmbed(guild).setTitle(`autoresponders (${all.length})`);
   const components = applyPage(embed, 'responders', current);
 
   return { embeds: [embed], components };

@@ -232,7 +232,7 @@ async function runAdd(
   );
 
   await interaction.reply({
-    embeds: [menuEmbed(guild, `✦ made the ${menu.name} menu !`, menu)],
+    embeds: [menuEmbed(guild, `made the ${menu.name} menu !`, menu)],
     content: pasteHint(guild, menu),
   });
 }
@@ -252,7 +252,7 @@ async function runEdit(
   if (!menu) return;
 
   await interaction.reply({
-    embeds: [menuEmbed(guild, `✦ updated ${menu.name} !`, menu)],
+    embeds: [menuEmbed(guild, `updated ${menu.name} !`, menu)],
   });
 }
 
@@ -302,7 +302,7 @@ async function runList(
     await interaction.reply({
       embeds: [
         serverEmbed(guild)
-          .setTitle('✦ role menus (0)')
+          .setTitle('role menus (0)')
           .setDescription(
             `none yet ! make one with ${commandMention('/rolemenu add')}`,
           ),

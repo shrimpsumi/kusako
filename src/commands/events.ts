@@ -237,7 +237,7 @@ export const events: SlashCommand = {
 
     if (sub === 'list') {
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ event replies')
+        .setTitle('event replies')
         .setDescription(
           `-# an event with no channel never fires... try ${commandMention('/events test')}`,
         )

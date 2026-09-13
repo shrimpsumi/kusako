@@ -392,7 +392,7 @@ function panelPayload(record: EmbedRecord) {
       : '';
 
   return {
-    content: `✦ editing the ${inlineCode(record.name)} embed ! the preview updates as you go${note}`,
+    content: `editing the ${inlineCode(record.name)} embed ! the preview updates as you go${note}`,
     embeds: [embed],
     components: buttonRows(record.nameKey),
   };
@@ -488,12 +488,12 @@ export async function handleEmbedComponents(
 
     if (!existing) {
       embed
-        .setTitle('✦ already gone !')
+        .setTitle('already gone !')
         .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
     } else {
       deleteEmbed(interaction.guildId, nameKey);
       embed
-        .setTitle('✦ embed deleted !')
+        .setTitle('embed deleted !')
         .setDescription(`deleted the ${inlineCode(existing.name)} embed.`);
     }
 
@@ -786,7 +786,7 @@ export const embeds: SlashCommand = {
           : '-# ✧ nothing references it right now';
 
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ delete this embed ?')
+        .setTitle('delete this embed ?')
         .setDescription(
           [
             `ᯓ➤ **${record.name}**`,

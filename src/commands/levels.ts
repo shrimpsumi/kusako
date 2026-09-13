@@ -54,7 +54,7 @@ function levelsPage(guild: Guild, _userId: string, page: number) {
 
   if (entries.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('✦ level replies (0)')
+      .setTitle('level replies (0)')
       .setDescription(
         `no level replies yet ! add one with ${commandMention('/levels set')}`,
       );
@@ -75,7 +75,7 @@ function levelsPage(guild: Guild, _userId: string, page: number) {
   const hint = `⁀જ➣ see one up close with ${inlineCode('/levels show <level>')}`;
   const current = paginate(blocks, off, hint, page);
   const embed = serverEmbed(guild).setTitle(
-    `✦ level replies (${entries.length})`,
+    `level replies (${entries.length})`,
   );
   const components = applyPage(embed, 'levels', current);
 

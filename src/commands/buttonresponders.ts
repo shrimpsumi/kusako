@@ -233,7 +233,7 @@ function brPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('✦ button responders (0)')
+      .setTitle('button responders (0)')
       .setDescription(
         `none here yet... make one with ${commandMention('/buttonresponders add')}, then drop ${inlineCode('{button:name}')} in any reply !!`,
       );

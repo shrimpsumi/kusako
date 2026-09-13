@@ -58,7 +58,7 @@ export const modifyrolebalance: SlashCommand = {
     );
 
     const embed = serverEmbed(interaction.guild)
-      .setTitle('✦ balances updated !')
+      .setTitle('balances updated !')
       .setDescription(
         `gave ${money(amount)} to everyone with ${role} !\n-# ✧ ${paid.size.toLocaleString('en-US')} members ⊹ ${money(amount * paid.size)} handed out`,
       );

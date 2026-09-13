@@ -78,7 +78,7 @@ function itemDetailEmbed(guild: Guild, title: string, item: Item) {
       },
       {
         name: 'reply',
-        value: item.useReply ? 'yes !' : 'none',
+        value: item.useReply ? 'yes' : 'none',
         inline: true,
       },
       {
@@ -88,7 +88,7 @@ function itemDetailEmbed(guild: Guild, title: string, item: Item) {
       },
       {
         name: 'giftable',
-        value: item.giftable ? 'yes !' : 'no',
+        value: item.giftable ? 'yes' : 'no',
         inline: true,
       },
     );
@@ -106,7 +106,7 @@ function confirmEmbed(guild: Guild, item: Item) {
   ].filter((line) => line !== null);
 
   return serverEmbed(guild)
-    .setTitle('✦ delete this item ?')
+    .setTitle('delete this item ?')
     .setDescription(
       [
         `${item.emoji ?? '📦'} **${item.name}**`,
@@ -160,7 +160,7 @@ export async function handleItemComponents(
   const item = getItem(interaction.guildId, nameKey);
   if (!item) {
     const embed = serverEmbed(interaction.guild)
-      .setTitle('✦ already gone !')
+      .setTitle('already gone !')
       .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
 
     await interaction.update({ embeds: [embed], components: [] });
@@ -170,7 +170,7 @@ export async function handleItemComponents(
   deleteItem(interaction.guildId, nameKey);
 
   const embed = serverEmbed(interaction.guild)
-    .setTitle('✦ item deleted !')
+    .setTitle('item deleted !')
     .setDescription(
       `deleted ${item.emoji ?? '📦'} **${item.name}** and removed it from everyone's inventories.`,
     );
@@ -183,7 +183,7 @@ function itemsPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('✦ server items (0)')
+      .setTitle('server items (0)')
       .setDescription(
         `no items yet. make one with ${inlineCode('/items add')} c:`,
       );
@@ -442,11 +442,7 @@ export const items: SlashCommand = {
       }
 
       const item = getItem(guildId, name)!;
-      const embed = itemDetailEmbed(
-        interaction.guild,
-        '✦ item created !',
-        item,
-      );
+      const embed = itemDetailEmbed(interaction.guild, 'item created !', item);
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -509,7 +505,7 @@ export const items: SlashCommand = {
       const updated = getItem(guildId, name)!;
       const embed = itemDetailEmbed(
         interaction.guild,
-        '✦ item updated !',
+        'item updated !',
         updated,
       );
 
@@ -579,7 +575,7 @@ export const items: SlashCommand = {
             inline: true,
           },
           {
-            name: 'gives role',
+            name: 'role on use',
             value: rolesOnUse(item.useReply),
             inline: true,
           },
@@ -654,7 +650,7 @@ export const items: SlashCommand = {
       // answers to command
       if (!result.actions.ephemeral) {
         const embed = userEmbed(interaction.user)
-          .setTitle('✧･ﾟ item used !')
+          .setTitle('item used !')
           .setDescription(`you use ${item.emoji ?? '📦'} **${item.name}** !`);
         await interaction.reply({ embeds: [embed] });
       }
