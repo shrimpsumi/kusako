@@ -38,29 +38,31 @@ function shopPage(guild: Guild, _userId: string, page: number) {
   }
 
   const currency = getCurrency(guild.id);
-  const greeting = "꒰^ >ヮ<^꒱ *hiiii! here's what i've got for sale:*";
-  const buyHint = `⁀જ buy with ${inlineCode('/shop buy <item>')}`;
+  const hint = `-# use ${inlineCode('/shop buy <item>')} to pick something up !`;
 
   const blocks = entries.map(({ item, listing }) => {
-    const stock =
-      listing.stock === null
-        ? 'unlimited'
-        : listing.stock <= 0
-          ? 'sold out :c'
-          : `\`${listing.stock}\``;
-    const requires = listing.requiredRoleId
-      ? `<@&${listing.requiredRoleId}>`
-      : 'none';
+    const soldOut = listing.stock !== null && listing.stock <= 0;
+    const name = soldOut ? `~~${item.name}~~` : `**${item.name}**`;
 
     const lines = [
-      `ᯓ➤ **${item.name}** · ${currency.emoji} \`${listing.price.toLocaleString('en-US')}\``,
+      `${item.emoji ?? '\u{1F4E6}'}⠀⠀${name}⠀⠀${currency.emoji} \`${listing.price.toLocaleString('en-US')}\``,
     ];
-    if (item.description) lines.push(`-# ✧ ${item.description}`);
-    lines.push(`-# ✧ stock: ${stock} ━ requires: ${requires}`);
+    if (item.description) lines.push(`> ${item.description}`);
+
+    if (soldOut) {
+      lines.push('> sold out :c');
+    } else {
+      const meta = [
+        listing.stock === null ? 'unlimited stock' : `${listing.stock} left`,
+        listing.requiredRoleId ? `<@&${listing.requiredRoleId}> only` : null,
+      ].filter((part) => part !== null);
+      lines.push(`> ${meta.join(' :: ')}`);
+    }
+
     return lines.join('\n');
   });
 
-  const current = paginate(blocks, greeting, buyHint, page);
+  const current = paginate(blocks, null, hint, page);
   const embed = serverEmbed(guild);
   const components = applyPage(embed, 'shop', current);
 
