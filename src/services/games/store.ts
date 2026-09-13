@@ -30,6 +30,52 @@ export function setGameEnabled(
   setGuildSetting(guildId, `${game}.enabled`, enabled ? '1' : '0');
 }
 
+function settingIntOrZero(guildId: string, key: string): number | null {
+  const raw = getGuildSetting(guildId, key);
+  if (raw === null) return null;
+
+  const n = Number(raw);
+  return Number.isSafeInteger(n) && n >= 0 ? n : null;
+}
+
+export interface GamblingSettings {
+  minBet: number;
+  maxBet: number;
+}
+
+const DEFAULT_GAMBLING: GamblingSettings = {
+  minBet: 10,
+  maxBet: 0,
+};
+
+export function getGamblingSettings(guildId: string): GamblingSettings {
+  return {
+    minBet: settingInt(guildId, 'gambling.min') ?? DEFAULT_GAMBLING.minBet,
+    maxBet:
+      settingIntOrZero(guildId, 'gambling.max') ?? DEFAULT_GAMBLING.maxBet,
+  };
+}
+
+export function setGamblingSettings(
+  guildId: string,
+  settings: Partial<GamblingSettings>,
+): void {
+  if (settings.minBet !== undefined) {
+    setGuildSetting(guildId, 'gambling.min', String(settings.minBet));
+  }
+  if (settings.maxBet !== undefined) {
+    setGuildSetting(guildId, 'gambling.max', String(settings.maxBet));
+  }
+}
+
+export function isGamblingEnabled(guildId: string): boolean {
+  return isGameEnabled(guildId, 'gambling');
+}
+
+export function setGamblingEnabled(guildId: string, enabled: boolean): void {
+  setGameEnabled(guildId, 'gambling', enabled);
+}
+
 export interface PatSettings {
   minReward: number;
   maxReward: number;
