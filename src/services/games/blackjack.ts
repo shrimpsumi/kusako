@@ -1,0 +1,135 @@
+import {
+  createDeck,
+  handValue,
+  isBust,
+  isBlackjack,
+  shouldDealerHit,
+  type Card,
+} from './cards.js';
+
+export interface BlackjackGame {
+  guildId: string;
+  userId: string;
+  bet: number;
+  deck: Card[];
+  player: Card[];
+  dealer: Card[];
+  doubled: boolean;
+  timeout: ReturnType<typeof setTimeout>;
+}
+
+export type Outcome = 'blackjack' | 'win' | 'lose' | 'push' | 'bust';
+
+const TIMEOUT_MS = 60_000;
+
+const games = new Map<string, BlackjackGame>();
+
+function key(guildId: string, userId: string): string {
+  return `${guildId}:${userId}`;
+}
+
+export function getGame(guildId: string, userId: string): BlackjackGame | null {
+  return games.get(key(guildId, userId)) ?? null;
+}
+
+export function hasGame(guildId: string, userId: string): boolean {
+  return games.has(key(guildId, userId));
+}
+
+function clearGame(guildId: string, userId: string): void {
+  const k = key(guildId, userId);
+  const game = games.get(k);
+  if (game) {
+    clearTimeout(game.timeout);
+    games.delete(k);
+  }
+}
+
+export function startGame(
+  guildId: string,
+  userId: string,
+  bet: number,
+  onTimeout: (game: BlackjackGame) => void,
+): BlackjackGame {
+  clearGame(guildId, userId);
+
+  const deck = createDeck();
+  const player = [deck.pop()!, deck.pop()!];
+  const dealer = [deck.pop()!, deck.pop()!];
+
+  const game: BlackjackGame = {
+    guildId,
+    userId,
+    bet,
+    deck,
+    player,
+    dealer,
+    doubled: false,
+    timeout: setTimeout(() => {
+      const g = games.get(key(guildId, userId));
+      if (g) {
+        games.delete(key(guildId, userId));
+        onTimeout(g);
+      }
+    }, TIMEOUT_MS),
+  };
+
+  games.set(key(guildId, userId), game);
+  return game;
+}
+
+export function hit(game: BlackjackGame): Card {
+  const card = game.deck.pop()!;
+  game.player.push(card);
+  resetTimeout(game);
+  return card;
+}
+
+export function doubleDown(game: BlackjackGame): Card {
+  game.bet *= 2;
+  game.doubled = true;
+  const card = game.deck.pop()!;
+  game.player.push(card);
+  return card;
+}
+
+export function dealerPlay(game: BlackjackGame): void {
+  while (shouldDealerHit(game.dealer)) {
+    game.dealer.push(game.deck.pop()!);
+  }
+}
+
+export function resolve(game: BlackjackGame): Outcome {
+  const playerVal = handValue(game.player);
+  const dealerVal = handValue(game.dealer);
+
+  if (isBust(game.player)) return 'bust';
+  if (isBlackjack(game.player) && !isBlackjack(game.dealer)) return 'blackjack';
+  if (isBlackjack(game.dealer) && !isBlackjack(game.player)) return 'lose';
+  if (isBlackjack(game.player) && isBlackjack(game.dealer)) return 'push';
+  if (isBust(game.dealer)) return 'win';
+  if (playerVal > dealerVal) return 'win';
+  if (playerVal < dealerVal) return 'lose';
+  return 'push';
+}
+
+export function payout(bet: number, outcome: Outcome): number {
+  if (outcome === 'blackjack') return Math.floor(bet * 1.5);
+  if (outcome === 'win') return bet;
+  if (outcome === 'push') return 0;
+  return -bet;
+}
+
+export function endGame(guildId: string, userId: string): void {
+  clearGame(guildId, userId);
+}
+
+function resetTimeout(game: BlackjackGame): void {
+  clearTimeout(game.timeout);
+  game.timeout = setTimeout(() => {
+    const k = key(game.guildId, game.userId);
+    if (games.has(k)) {
+      games.delete(k);
+    }
+  }, TIMEOUT_MS);
+}
