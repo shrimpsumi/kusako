@@ -89,6 +89,7 @@ export const coinflip: SlashCommand = {
     );
 
     const embed = userEmbed(interaction.user)
+      .setColor(won ? 0xb8e6c4 : 0xf0b3b3)
       .setDescription(line)
       .setFooter({
         text: `balance: ${result.balance.toLocaleString('en-US')}`,
