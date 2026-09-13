@@ -54,7 +54,8 @@ function levelsPage(guild: Guild, _userId: string, page: number) {
 
   if (entries.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('level replies (0)')
+      .setTitle('level replies !')
+      .setColor(0xffb5f9)
       .setDescription(
         `no level replies yet ! add one with ${commandMention('/levels set')}`,
       );
@@ -66,17 +67,21 @@ function levelsPage(guild: Guild, _userId: string, page: number) {
     ? null
     : `-# leveling is off,, none of these fire until ${commandMention('/settings set levels')}`;
 
+  const hint = [
+    `<:arrowright:1545483910022959194> see one up close with ${inlineCode('/levels show <level>')}`,
+    '-# learn about level replies on the docs [soon] ! <:shrimpy:1548714907019518082>',
+  ].join('\n');
+
   const blocks = entries.map(({ level, response }) => {
     const badges = templateTraits(response).badges;
     const summary = badges.length ? badges.join(' · ') : 'just a message';
-    return `ᯓ➤ **level ${level}**\n-# ✧ ${summary}`;
+    return `### ***level ${level}***\n${summary}`;
   });
 
-  const hint = `⁀જ➣ see one up close with ${inlineCode('/levels show <level>')}`;
-  const current = paginate(blocks, off, hint, page);
-  const embed = serverEmbed(guild).setTitle(
-    `level replies (${entries.length})`,
-  );
+  const current = paginate(blocks, off, hint, page, '\n');
+  const embed = serverEmbed(guild)
+    .setTitle('level replies !')
+    .setColor(0xffb5f9);
   const components = applyPage(embed, 'levels', current);
 
   return { embeds: [embed], components };

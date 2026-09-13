@@ -696,35 +696,35 @@ export const schedule: SlashCommand = {
     if (sub === 'list') {
       const rows = listSchedules(guildId);
       if (rows.length === 0) {
-        const empty = serverEmbed(interaction.guild).setDescription(
-          [
-            '꒰ scheduled posts ꒱',
-            'nothing lined up yet !',
-            `⁀જ➣ *start one with ${commandMention('/schedule add daily')}*`,
-          ].join('\n\n'),
-        );
+        const empty = serverEmbed(interaction.guild)
+          .setTitle('scheduled posts !')
+          .setColor(0x968bc9)
+          .setDescription(
+            `nothing lined up yet ! start one with ${commandMention('/schedule add daily')}`,
+          );
         await interaction.reply({ embeds: [empty] });
         return;
       }
 
       const zone = getGuildTimezone(guildId);
-      const header = `꒰ scheduled posts ꒱ *${rows.length} of ${MAX_SCHEDULES_PER_GUILD} ⊹ ${zone}*`;
-      const blocks = rows.map((row) =>
-        [
-          `ᯓ➤ **${row.id}** ━ ${channelMention(row.channelId)}`,
-          `-# ✧ ${describe(row, zone)}`,
-          `-# ✧ ${row.state === 'missed' ? 'missed while sako was down' : `next ${stamp(row.nextRun)}`}`,
-        ].join('\n'),
-      );
+
+      const blocks = rows.map((row) => {
+        const status =
+          row.state === 'missed'
+            ? 'missed while sako was down'
+            : `next ${stamp(row.nextRun)}`;
+        return `### ***${row.id}*** · ${channelMention(row.channelId)}\n${describe(row, zone)} · ${status}`;
+      });
+
+      const hint = [
+        `<:arrowright:1545483910022959194> ${commandMention('/schedule show')} to read one !`,
+        `-# ${zone}`,
+      ].join('\n');
 
       const embed = serverEmbed(interaction.guild)
-        .setDescription(
-          [
-            header,
-            ...blocks,
-            `⁀જ➣ *${commandMention('/schedule show')} to read one !*`,
-          ].join('\n\n'),
-        )
+        .setTitle('scheduled posts !')
+        .setColor(0x968bc9)
+        .setDescription([blocks.join('\n'), '', hint].join('\n'))
         .setImage(SPACER_IMAGE);
 
       await interaction.reply({ embeds: [embed], files: [spacerFile()] });

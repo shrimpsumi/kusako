@@ -57,7 +57,8 @@ function respondersPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('autoresponders (0)')
+      .setTitle('autoresponders !')
+      .setColor(0xede08a)
       .setDescription(
         `no autoresponders yet,, make your first with ${inlineCode('/autoresponders add')}`,
       );
@@ -65,17 +66,21 @@ function respondersPage(guild: Guild, _userId: string, page: number) {
     return { embeds: [embed], components: [] };
   }
 
-  const blocks = all.map((responder) =>
-    [
-      inlineCode(responder.trigger),
-      responder.matchMode,
-      ...templateTraits(responder.response).badges,
-    ].join(' · '),
-  );
+  const hint = [
+    `<:arrowright:1545483910022959194> see one up close with ${inlineCode('/autoresponders show')}`,
+    '-# learn about the DSL on the docs [soon] ! <:shrimpy:1548714907019518082>',
+  ].join('\n');
 
-  const hint = `-# see one up close with ${inlineCode('/autoresponders show')}`;
+  const blocks = all.map((responder) => {
+    const badges = templateTraits(responder.response).badges;
+    const summary = [responder.matchMode, ...badges].join(' · ');
+    return `### ***${responder.trigger}***\n${summary}`;
+  });
+
   const current = paginate(blocks, null, hint, page, '\n');
-  const embed = serverEmbed(guild).setTitle(`autoresponders (${all.length})`);
+  const embed = serverEmbed(guild)
+    .setTitle('autoresponders !')
+    .setColor(0xede08a);
   const components = applyPage(embed, 'responders', current);
 
   return { embeds: [embed], components };

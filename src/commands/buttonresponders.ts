@@ -233,7 +233,8 @@ function brPage(guild: Guild, _userId: string, page: number) {
 
   if (all.length === 0) {
     const embed = serverEmbed(guild)
-      .setTitle('button responders (0)')
+      .setTitle('button responders !')
+      .setColor(0xc9b4ec)
       .setDescription(
         `none here yet... make one with ${commandMention('/buttonresponders add')}, then drop ${inlineCode('{button:name}')} in any reply !!`,
       );
@@ -241,17 +242,21 @@ function brPage(guild: Guild, _userId: string, page: number) {
     return { embeds: [embed], components: [] };
   }
 
-  const header = `꒰ button responders ꒱ *${all.length} of them !*`;
-  const hint = `⁀જ➣ attach one with ${inlineCode('{button:name}')} in any reply`;
+  const hint = [
+    `<:arrowright:1545483910022959194> attach one with ${inlineCode('{button:name}')} in any reply`,
+    '-# learn about buttons on the docs [soon] ! <:shrimpy:1548714907019518082>',
+  ].join('\n');
 
   const blocks = all.map(({ name, response }) => {
     const { badges } = templateTraits(response);
     const summary = badges.length > 0 ? badges.join(' · ') : 'just a message';
-    return `ᯓ➤ **${name}**\n-# ✧ ${summary}`;
+    return `### ***${name}***\n${summary}`;
   });
 
-  const current = paginate(blocks, header, hint, page);
-  const embed = serverEmbed(guild);
+  const current = paginate(blocks, null, hint, page, '\n');
+  const embed = serverEmbed(guild)
+    .setTitle('button responders !')
+    .setColor(0xc9b4ec);
   const components = applyPage(embed, 'buttonresponders', current);
 
   return { embeds: [embed], components };
