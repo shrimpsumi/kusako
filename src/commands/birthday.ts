@@ -117,7 +117,7 @@ export const birthday: SlashCommand = {
       if (note) lines.push(note);
 
       const embed = userEmbed(interaction.user)
-        .setTitle('✧･ﾟ birthday saved !')
+        .setTitle('birthday saved !')
         .setDescription(lines.join('\n'));
 
       await interaction.reply({ embeds: [embed] });
@@ -149,7 +149,7 @@ export const birthday: SlashCommand = {
       }
 
       const embed = userEmbed(target)
-        .setTitle('✧･ﾟ birthday !')
+        .setTitle('birthday !')
         .setDescription(
           `${self ? 'yours is' : `${target.displayName}'s is`} **${formatBirthday(saved.month, saved.day)}**`,
         );

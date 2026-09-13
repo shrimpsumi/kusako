@@ -101,7 +101,7 @@ export const modifybalance: SlashCommand = {
     } as const;
 
     const embed = serverEmbed(interaction.guild)
-      .setTitle('✦ balance updated !')
+      .setTitle('balance updated !')
       .setDescription(descriptions[sub as keyof typeof descriptions]);
 
     await interaction.reply({

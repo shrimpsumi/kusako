@@ -50,7 +50,7 @@ export const level: SlashCommand = {
     const who =
       target.id === interaction.user.id ? "you're" : `${target.displayName} is`;
     const embed = userEmbed(target)
-      .setTitle('✧･ﾟ level !')
+      .setTitle('level !')
       .setDescription(
         `${who} level **${current}** ! (${progress})\ntotal xp: **${xp.toLocaleString('en-US')}**`,
       );

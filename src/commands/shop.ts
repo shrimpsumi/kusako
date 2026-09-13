@@ -241,7 +241,7 @@ export const shop: SlashCommand = {
           ? ''
           : `\n-# ${result.remainingStock} left in stock`;
       const embed = userEmbed(interaction.user)
-        .setTitle('✧･ﾟ purchased !')
+        .setTitle('purchased !')
         .setDescription(
           `you bought ${item.emoji ?? '📦'} **${item.name}** for ${currency.emoji} **${result.price.toLocaleString('en-US')}** !${usable}${stockLine}`,
         );
@@ -275,7 +275,7 @@ export const shop: SlashCommand = {
         requiredRole ? `needs ${requiredRole.toString()}` : null,
       ].filter((d) => d !== null);
       const embed = serverEmbed(interaction.guild)
-        .setTitle(existed ? '✦ listing updated !' : '✦ up for sale !')
+        .setTitle(existed ? 'listing updated !' : 'up for sale !')
         .setDescription(
           `${item.emoji ?? '📦'} **${item.name}**\n-# ${details.join(' · ')}`,
         );
@@ -296,7 +296,7 @@ export const shop: SlashCommand = {
       }
 
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ off the shelf !')
+        .setTitle('off the shelf !')
         .setDescription(
           `${inlineCode(name)} is no longer for sale. inventories are untouched !`,
         );

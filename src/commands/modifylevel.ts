@@ -158,7 +158,7 @@ export const modifylevel: SlashCommand = {
       .join('\n');
 
     const embed = serverEmbed(interaction.guild)
-      .setTitle('✦ levels updated !')
+      .setTitle('levels updated !')
       .setDescription(summary);
 
     await interaction.reply({

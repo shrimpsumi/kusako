@@ -170,7 +170,7 @@ export const settings: SlashCommand = {
       setCurrency(guildId, { name, emoji });
 
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ currency updated !')
+        .setTitle('currency updated !')
         .setDescription(`this server's currency is now ${emoji} **${name}** !`);
 
       await interaction.reply({ embeds: [embed] });
@@ -217,7 +217,7 @@ export const settings: SlashCommand = {
       const currency = getCurrency(guildId);
       const state = isGameEnabled(guildId, 'pat') ? 'on' : 'off';
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ head pats updated !')
+        .setTitle('head pats updated !')
         .setDescription(
           `reward: ${currency.emoji} **${now.minReward.toLocaleString('en-US')}-${now.maxReward.toLocaleString('en-US')}**, cooldown: **${formatDuration(now.cooldownSeconds)}**, pats are **${state}** !`,
         );
@@ -238,7 +238,7 @@ export const settings: SlashCommand = {
       setGuildTimezone(guildId, zone);
       const now = zonedParts(Date.now(), zone);
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ timezone updated !')
+        .setTitle('timezone updated !')
         .setDescription(
           `scheduled posts follow **${zone}** now; it's ${formatWallTime(now.hour * 60 + now.minute)} there`,
         );
@@ -296,7 +296,7 @@ export const settings: SlashCommand = {
       }
 
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ ticket categories updated !')
+        .setTitle('ticket categories updated !')
         .setDescription(lines.join('\n'));
 
       await interaction.reply({ embeds: [embed] });
@@ -308,7 +308,7 @@ export const settings: SlashCommand = {
       setLevelingEnabled(guildId, enabled);
 
       const embed = serverEmbed(interaction.guild)
-        .setTitle('✦ leveling updated !')
+        .setTitle('leveling updated !')
         .setDescription(
           enabled
             ? 'leveling is **on** ! members earn xp by chatting now c:'

@@ -112,7 +112,7 @@ export const give: SlashCommand = {
       }
 
       const embed = userEmbed(interaction.user)
-        .setTitle('✧･ﾟ handed over !')
+        .setTitle('handed over !')
         .setDescription(`successfully gave ${money(amount)} to ${target} !`);
 
       await interaction.reply({ embeds: [embed] });
@@ -156,7 +156,7 @@ export const give: SlashCommand = {
       }
 
       const embed = userEmbed(interaction.user)
-        .setTitle('✧･ﾟ handed over !')
+        .setTitle('handed over !')
         .setDescription(`successfully gave ${amount}× ${label} to ${target} !`);
 
       await interaction.reply({ embeds: [embed] });

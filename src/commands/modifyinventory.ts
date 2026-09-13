@@ -139,7 +139,7 @@ export const modifyinventory: SlashCommand = {
     } as const;
 
     const embed = serverEmbed(interaction.guild)
-      .setTitle('✦ inventory updated !')
+      .setTitle('inventory updated !')
       .setDescription(descriptions[sub as keyof typeof descriptions]);
 
     await interaction.reply({

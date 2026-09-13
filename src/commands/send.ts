@@ -92,7 +92,7 @@ export const send: SlashCommand = {
           ? `<#${result.actions.sendToChannelId}>`
           : null;
 
-      const embed = userEmbed(interaction.user).setTitle('✦ sent !');
+      const embed = userEmbed(interaction.user).setTitle('sent !');
       if (destination)
         embed.setDescription(`your message went to ${destination} !`);
       await interaction.reply({ embeds: [embed] });
