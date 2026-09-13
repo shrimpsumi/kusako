@@ -313,34 +313,22 @@ function embedsPage(guild: Guild, _userId: string, page: number) {
     return { embeds: [embed], components: [] };
   }
 
-  const usage = usageIndex(guild.id);
-  const header = `꒰ saved embeds ꒱ *${all.length} of them !*`;
-  const hint = `⁀જ➣ preview one with ${inlineCode('/embeds show <name>')}`;
+  const hint = [
+    `<:arrowright:1545483910022959194> use in a reply with ${inlineCode(`{embed:name}`)}.\n<:arrowright:1545483910022959194> edit with ${inlineCode(`/embeds edit`)}`,
+    '-# check out embed examples on the docs [soon]! <:shrimpy:1548714907019518082>',
+  ].join('\n');
 
   const blocks = all.map((record) => {
     const structure = structureOf(record.data);
-    return [
-      `ᯓ➤ **${record.name}**`,
-      structure.length
-        ? `-# ✧ ${structure.join(' ━ ')}`
-        : '-# ✧ still empty,, nothing in it yet',
-      `-# ✧ ${usageLine(usage.get(record.nameKey))}`,
-    ].join('\n');
+    const summary = structure.length
+      ? structure.join(' · ')
+      : 'empty,, nothing in it yet';
+    return `### ***${record.name}***\n${summary}`;
   });
 
-  const dynamic = [...usage.values()].reduce(
-    (max, entry) => Math.max(max, entry.dynamic),
-    0,
-  );
-
-  const current = paginate(blocks, header, hint, page);
-  const embed = serverEmbed(guild);
-  const components = applyPage(
-    embed,
-    'embeds',
-    current,
-    dynamic ? `${dynamic} more picked by a capture at send time` : undefined,
-  );
+  const current = paginate(blocks, null, hint, page, '\n');
+  const embed = serverEmbed(guild).setTitle('embeds !').setColor(0xf5acd0);
+  const components = applyPage(embed, 'embeds', current);
 
   return { embeds: [embed], components };
 }
