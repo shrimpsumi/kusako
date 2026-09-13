@@ -15,7 +15,8 @@ export interface BlackjackGame {
   player: Card[];
   dealer: Card[];
   doubled: boolean;
-  timeout: ReturnType<typeof setTimeout>;
+  onTimeout: (game: BlackjackGame) => void;
+  timeout?: ReturnType<typeof setTimeout>;
 }
 
 export type Outcome = 'blackjack' | 'win' | 'lose' | 'push' | 'bust';
@@ -65,23 +66,18 @@ export function startGame(
     player,
     dealer,
     doubled: false,
-    timeout: setTimeout(() => {
-      const g = games.get(key(guildId, userId));
-      if (g) {
-        games.delete(key(guildId, userId));
-        onTimeout(g);
-      }
-    }, TIMEOUT_MS),
+    onTimeout,
   };
 
   games.set(key(guildId, userId), game);
+  armTimeout(game);
   return game;
 }
 
 export function hit(game: BlackjackGame): Card {
   const card = game.deck.pop()!;
   game.player.push(card);
-  resetTimeout(game);
+  armTimeout(game);
   return card;
 }
 
@@ -124,12 +120,13 @@ export function endGame(guildId: string, userId: string): void {
   clearGame(guildId, userId);
 }
 
-function resetTimeout(game: BlackjackGame): void {
+function armTimeout(game: BlackjackGame): void {
   clearTimeout(game.timeout);
   game.timeout = setTimeout(() => {
     const k = key(game.guildId, game.userId);
-    if (games.has(k)) {
+    if (games.get(k) === game) {
       games.delete(k);
+      game.onTimeout(game);
     }
   }, TIMEOUT_MS);
 }
