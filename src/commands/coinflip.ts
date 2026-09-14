@@ -1,11 +1,12 @@
 import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
-import { getCurrency, modifyBalance } from '../services/economy/guild.js';
+import { getCurrency } from '../services/economy/guild.js';
 import {
   isGamblingEnabled,
   getGamblingSettings,
 } from '../services/games/store.js';
+import { settleGame } from '../services/games/stats.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
 const WIN_LINES = [
@@ -74,7 +75,14 @@ export const coinflip: SlashCommand = {
 
     const won = Math.random() < 0.5;
     const delta = won ? bet : -bet;
-    const result = modifyBalance(guildId, userId, delta, 'coinflip');
+    const result = settleGame(
+      guildId,
+      userId,
+      'coinflip',
+      won ? 'win' : 'loss',
+      delta,
+      delta,
+    );
 
     if (!result.ok) {
       await interaction.reply({

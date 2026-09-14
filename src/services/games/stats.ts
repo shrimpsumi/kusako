@@ -1,4 +1,9 @@
 import { db } from '../../db.js';
+import {
+  getBalance,
+  modifyBalance,
+  type ModifyResult,
+} from '../economy/guild.js';
 
 export const STAT_GAMES = [
   { id: 'blackjack', pushes: true },
@@ -130,6 +135,28 @@ export function recordGame(
       );
 
     return next;
+  });
+
+  return run();
+}
+
+export function settleGame(
+  guildId: string,
+  userId: string,
+  game: StatGame,
+  result: GameResult,
+  delta: number,
+  credit: number,
+): ModifyResult {
+  const run = db().transaction((): ModifyResult => {
+    const settled =
+      credit !== 0
+        ? modifyBalance(guildId, userId, credit, game)
+        : { ok: true, balance: getBalance(guildId, userId) };
+    if (!settled.ok) return settled;
+
+    recordGame(guildId, userId, game, result, delta);
+    return settled;
   });
 
   return run();

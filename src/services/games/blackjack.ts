@@ -6,6 +6,7 @@ import {
   shouldDealerHit,
   type Card,
 } from './cards.js';
+import type { GameResult } from './stats.js';
 
 export interface BlackjackGame {
   guildId: string;
@@ -114,6 +115,16 @@ export function payout(bet: number, outcome: Outcome): number {
   if (outcome === 'win') return bet;
   if (outcome === 'push') return 0;
   return -bet;
+}
+
+export function credit(bet: number, outcome: Outcome): number {
+  return bet + payout(bet, outcome);
+}
+
+export function resultOf(outcome: Outcome): GameResult {
+  if (outcome === 'blackjack' || outcome === 'win') return 'win';
+  if (outcome === 'push') return 'push';
+  return 'loss';
 }
 
 export function endGame(guildId: string, userId: string): void {
