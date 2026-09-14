@@ -22,6 +22,10 @@ import {
   reopenTicket,
 } from '../services/tickets/fire.js';
 import { buildPage } from '../services/pageRegistry.js';
+import {
+  isBlackjackButton,
+  handleBlackjackButton,
+} from '../commands/blackjack.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -95,6 +99,18 @@ export function registerInteractionCreate(client: SakoClient): void {
         else await openTicket(interaction);
       } catch (err) {
         logger.error({ err, id: customId }, 'ticket button failed');
+      }
+      return;
+    }
+
+    if (interaction.isButton() && isBlackjackButton(interaction.customId)) {
+      try {
+        await handleBlackjackButton(interaction);
+      } catch (err) {
+        logger.error(
+          { err, id: interaction.customId },
+          'blackjack button failed',
+        );
       }
       return;
     }
