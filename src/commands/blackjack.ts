@@ -10,11 +10,7 @@ import {
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
-import {
-  getCurrency,
-  modifyBalance,
-  getBalance,
-} from '../services/economy/guild.js';
+import { getCurrency, modifyBalance } from '../services/economy/guild.js';
 import {
   isGamblingEnabled,
   getGamblingSettings,
@@ -34,10 +30,13 @@ import {
   dealerPlay,
   resolve,
   payout,
+  credit,
+  resultOf,
   endGame,
   type BlackjackGame,
   type Outcome,
 } from '../services/games/blackjack.js';
+import { settleGame } from '../services/games/stats.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
 const BJ_PREFIX = 'bj:';
@@ -141,16 +140,20 @@ function finishGame(
   const delta = payout(game.bet, outcome);
   const currency = getCurrency(guildId);
 
-  const returned = game.bet + delta;
-  if (returned > 0) {
-    modifyBalance(guildId, game.userId, returned, 'blackjack');
-  }
-
-  const balance = getBalance(guildId, game.userId);
+  const settled = settleGame(
+    guildId,
+    game.userId,
+    'blackjack',
+    resultOf(outcome),
+    delta,
+    credit(game.bet, outcome),
+  );
   endGame(guildId, game.userId);
 
   return {
-    embeds: [resultEmbed(user, game, outcome, delta, currency, balance)],
+    embeds: [
+      resultEmbed(user, game, outcome, delta, currency, settled.balance),
+    ],
     components: [],
   };
 }
