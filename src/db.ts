@@ -271,6 +271,21 @@ CREATE TABLE IF NOT EXISTS birthdays (
 CREATE INDEX IF NOT EXISTS idx_birthdays_day
   ON birthdays (month, day);
 
+CREATE TABLE IF NOT EXISTS game_stats (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  game TEXT NOT NULL,
+  played INTEGER NOT NULL,
+  wins INTEGER NOT NULL,
+  losses INTEGER NOT NULL,
+  streak INTEGER NOT NULL,
+  best_streak INTEGER NOT NULL,
+  net INTEGER NOT NULL,
+  best_win INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id, game)
+);
+
 CREATE TABLE IF NOT EXISTS global_balances (
   user_id TEXT NOT NULL,
   currency TEXT NOT NULL,
