@@ -25,6 +25,7 @@ import { rolemenu } from './rolemenu.js';
 import { birthday } from './birthday.js';
 import { coinflip } from './coinflip.js';
 import { blackjack } from './blackjack.js';
+import { stats } from './stats.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -52,4 +53,5 @@ export const commands: SlashCommand[] = [
   birthday,
   coinflip,
   blackjack,
+  stats,
 ];
