@@ -8,6 +8,7 @@ import {
 export const STAT_GAMES = [
   { id: 'blackjack', pushes: true },
   { id: 'coinflip', pushes: false },
+  { id: 'roulette', pushes: false },
 ] as const;
 
 export type StatGame = (typeof STAT_GAMES)[number]['id'];
