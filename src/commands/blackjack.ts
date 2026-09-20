@@ -60,7 +60,6 @@ const OUTCOME_TITLES: Record<Outcome, string> = {
 function gameEmbed(
   user: User,
   game: BlackjackGame,
-  currency: { emoji: string },
   revealed: boolean,
   result?: string,
 ): EmbedBuilder {
@@ -73,8 +72,6 @@ function gameEmbed(
     : `${handValue([game.dealer[0]!])} + ?`;
 
   const lines = [
-    `bet: ${currency.emoji} **${game.bet.toLocaleString('en-US')}**`,
-    '',
     `dealer (${dealerVal})`,
     `# ${dealerCards}`,
     '',
@@ -122,7 +119,7 @@ function resultEmbed(
       ? `${sign}${currency.emoji} **${delta.toLocaleString('en-US')}**`
       : 'bet returned';
 
-  return gameEmbed(user, game, currency, true, deltaLine)
+  return gameEmbed(user, game, true, deltaLine)
     .setTitle(OUTCOME_TITLES[outcome])
     .setColor(OUTCOME_COLORS[outcome])
     .setFooter({
@@ -201,7 +198,7 @@ export async function handleBlackjackButton(
     }
 
     await interaction.update({
-      embeds: [gameEmbed(interaction.user, game, currency, false)],
+      embeds: [gameEmbed(interaction.user, game, false)],
       components: [actionRow(game)],
     });
     return;
@@ -310,7 +307,7 @@ export const blackjack: SlashCommand = {
     }
 
     await interaction.reply({
-      embeds: [gameEmbed(interaction.user, game, currency, false)],
+      embeds: [gameEmbed(interaction.user, game, false)],
       components: [actionRow(game)],
     });
   },

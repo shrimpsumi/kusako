@@ -127,7 +127,7 @@ export const roulette: SlashCommand = {
       .setColor(won ? 0xb8e6c4 : 0xf0b3b3)
       .setDescription(
         [
-          `you bet ${money(amount)} on **${bet.name}**`,
+          `you bet on **${bet.name}**`,
           `# ${COLOR_EMOJI[pocketColor(pocket)]} ${pocketLabel(pocket)}`,
           won ? `you won +${money(delta)} !` : `you lost ${money(amount)} :c`,
         ].join('\n'),
