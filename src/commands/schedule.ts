@@ -32,13 +32,7 @@ import {
 } from '../services/timezone.js';
 import { templateDetailEmbed } from '../utils/templateEmbed.js';
 import { commandMention } from '../utils/commandMentions.js';
-import {
-  serverEmbed,
-  failureEmbed,
-  spacerFile,
-  SPACER_IMAGE,
-  NO_DMS,
-} from '../utils/style.js';
+import { serverEmbed, failureEmbed, NO_DMS } from '../utils/style.js';
 
 const REPLY_MAX = 2000;
 
@@ -717,10 +711,9 @@ export const schedule: SlashCommand = {
       const embed = serverEmbed(interaction.guild)
         .setTitle('scheduled posts !')
         .setColor(0x968bc9)
-        .setDescription([blocks.join('\n'), '', hint].join('\n'))
-        .setImage(SPACER_IMAGE);
+        .setDescription([blocks.join('\n'), '', hint].join('\n'));
 
-      await interaction.reply({ embeds: [embed], files: [spacerFile()] });
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
