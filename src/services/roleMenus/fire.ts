@@ -84,7 +84,7 @@ export async function fireRoleMenu(
     );
     await nudge(
       interaction,
-      "i couldn't change that one... admin needs to check my permissions !",
+      "i couldn't change that one... an admin needs to check my permissions !",
     );
     return;
   }

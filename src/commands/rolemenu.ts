@@ -81,7 +81,9 @@ function settingOptions(
     .addBooleanOption((o) =>
       o
         .setName('clear')
-        .setDescription('offer a clear roles pick, ignored by buttons')
+        .setDescription(
+          "add an option that removes all of this menu's roles, ignored by buttons",
+        )
         .setRequired(false),
     );
 }
@@ -166,7 +168,7 @@ function menuEmbed(guild: Guild, header: string, menu: RoleMenu) {
     );
   }
   lines.push(
-    `-# ✧ takes up **${menuRowCost(menu)}** of the 5 component rows`,
+    `-# ✧ takes up **${menuRowCost(menu)}** of the 5 rows a message can have`,
     `⁀જ➣ drop it anywhere with ${inlineCode(`{rolemenu:${menu.name}}`)}`,
   );
 
@@ -358,7 +360,7 @@ async function runRemove(
         [
           `## removed the ${inlineCode(menu.name)} menu !`,
           lines.length > 0 ? codeBlock(lines.slice(0, 1500)) : '',
-          `-# messages carrying it just show nothing now,, put it back with ${commandMention('/rolemenu add')}`,
+          `-# messages with it just show nothing now,, put it back with ${commandMention('/rolemenu add')}`,
         ]
           .filter((line) => line.length > 0)
           .join('\n'),
@@ -390,7 +392,9 @@ export const rolemenu: SlashCommand = {
       settingOptions(
         sub
           .setName('edit')
-          .setDescription('change how a menu looks, only what you pass')
+          .setDescription(
+            'change how a menu looks, blank options stay the same',
+          )
           .addStringOption((o) =>
             o
               .setName('name')

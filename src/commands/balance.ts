@@ -9,7 +9,7 @@ import {
 } from '../services/economy/global.js';
 import { userEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../utils/style.js';
 
-const NO_BUFF = '-# ₊˚⊹ nothing boosting...';
+const NO_BUFF = '-# ₊˚⊹ no buffs active...';
 
 export const balance: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -68,7 +68,7 @@ export const balance: SlashCommand = {
       .setDescription([server, everywhere, stash].join('\n\n'))
       .setImage(SPACER_IMAGE)
       .setFooter({
-        text: `server items live in /inventory !`,
+        text: `check your server items with /inventory !`,
       });
 
     await interaction.reply({ embeds: [embed], files: [spacerFile()] });

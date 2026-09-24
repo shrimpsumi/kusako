@@ -27,7 +27,7 @@ const MAX_EMBEDS = 3;
 const MAX_ROLE_TAGS = 25;
 
 const EPHEMERAL_CONFLICTS: Array<[string, string]> = [
-  ['delay', 'a private reply only lasts as long as the click does'],
+  ['delay', "i can't send the rest of a private reply later"],
   ['split', 'a private reply is always one message'],
   ['delete_reply', "private replies fade on their own, i can't delete them"],
   ['reactreply', 'nobody can react to a private reply'],
@@ -37,7 +37,7 @@ const TICKET_CONFLICTS = new Map<string, string>([
   ['dm', 'the greeting has to land in the ticket itself'],
   ['send', 'the greeting has to land in the ticket itself'],
   ['ephemeral', 'everyone in the ticket needs to see the greeting'],
-  ['delete_reply', 'that takes the greeting and the close button with it'],
+  ['delete_reply', 'that would delete the greeting and the close button too'],
   ['cooldown', 'the ticket type carries its own cooldown already'],
 ]);
 
@@ -340,7 +340,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     if (node.name === 'cooldown') {
       cooldowns += 1;
       if (cooldowns === 2) {
-        errors.push('only one {cooldown} per autoresponder !');
+        errors.push('only one {cooldown} per reply !');
       }
       checkDuration(node.args[0], 'cooldown', 1, errors);
       continue;
@@ -349,7 +349,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     if (node.name === 'delete_reply') {
       deleteReplies += 1;
       if (deleteReplies === 2) {
-        errors.push('only one {delete_reply} per autoresponder !');
+        errors.push('only one {delete_reply} per reply !');
       }
       checkDuration(node.args[0], 'delete_reply', 1, errors);
       continue;
@@ -366,7 +366,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     if (node.name === 'error') {
       errorTags += 1;
       if (errorTags === 2) {
-        errors.push('only one {error} per autoresponder !');
+        errors.push('only one {error} per reply !');
       }
       if ((node.args[0] ?? '').trim().length === 0) {
         errors.push('{error} needs a message, like {error: slow your roll !!}');
@@ -506,7 +506,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       reactions += 1;
       if (reactions === MAX_REACTIONS + 1) {
         errors.push(
-          `max ${MAX_REACTIONS} {react}/{reactreply} tags per autoresponder !`,
+          `max ${MAX_REACTIONS} {react}/{reactreply} tags per reply !`,
         );
       }
       if ((node.args[0] ?? '').trim().length === 0) {
@@ -518,7 +518,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     if (node.name === 'embed') {
       embedTags += 1;
       if (embedTags === MAX_EMBEDS + 1) {
-        errors.push(`max ${MAX_EMBEDS} {embed} tags per autoresponder !`);
+        errors.push(`max ${MAX_EMBEDS} {embed} tags per reply !`);
       }
       const arg = (node.args[0] ?? '').trim();
       if (arg.startsWith('#') && parseColor(arg) === null) {
@@ -533,7 +533,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       reactions += 1;
       if (reactions === MAX_REACTIONS + 1) {
         errors.push(
-          `max ${MAX_REACTIONS} {react}/{reactreply} tags per autoresponder !`,
+          `max ${MAX_REACTIONS} {react}/{reactreply} tags per reply !`,
         );
       }
       if ((node.args[0] ?? '').trim().length === 0) {
@@ -588,7 +588,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       roleTags += 1;
       if (roleTags === MAX_ROLE_TAGS + 1) {
         errors.push(
-          `max ${MAX_ROLE_TAGS} {addrole}/{removerole}/{temprole}/{togglerole} tags per autoresponder !`,
+          `max ${MAX_ROLE_TAGS} {addrole}/{removerole}/{temprole}/{togglerole} tags per reply !`,
         );
       }
       if ((node.args[0] ?? '').trim().length === 0) {
@@ -691,7 +691,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     );
     if (rows > MAX_ROWS) {
       errors.push(
-        `that's ${rows} rows of components and discord only allows ${MAX_ROWS} ! every dropdown takes a whole row, and buttons sit ${BUTTONS_PER_ROW} to a row`,
+        `that's ${rows} rows of buttons and dropdowns, and discord only allows ${MAX_ROWS} ! every dropdown takes a whole row, and buttons sit ${BUTTONS_PER_ROW} to a row`,
       );
     }
   }

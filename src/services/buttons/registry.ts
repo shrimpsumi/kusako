@@ -20,7 +20,7 @@ export const BUTTON_LIMITS: Record<string, ButtonLimit> = {
   },
   'button-all': {
     id: 'button-all',
-    label: 'this button, once total',
+    label: 'this button, first click only',
     blurb: 'this button once, ever',
     blocked: 'someone already grabbed that one !',
     perUser: false,
@@ -36,7 +36,7 @@ export const BUTTON_LIMITS: Record<string, ButtonLimit> = {
   },
   'message-all': {
     id: 'message-all',
-    label: 'any button here, once total',
+    label: 'any button here, first click only',
     blurb: 'one button here, ever',
     blocked: 'someone already claimed this one !',
     perUser: false,

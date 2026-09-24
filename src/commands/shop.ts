@@ -300,7 +300,7 @@ export const shop: SlashCommand = {
       const embed = serverEmbed(interaction.guild)
         .setTitle('off the shelf !')
         .setDescription(
-          `${inlineCode(name)} is no longer for sale. inventories are untouched !`,
+          `${inlineCode(name)} is no longer for sale ! anyone who already bought one keeps it`,
         );
 
       await interaction.reply({ embeds: [embed] });

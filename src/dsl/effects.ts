@@ -54,9 +54,7 @@ export const effects = new Map<string, Effect>([
       const amount = parseAmount(args[0] ?? '');
       const targetId = targetIdOf(meta, args[1]);
       if (amount === null || !targetId) {
-        throw new EffectError(
-          'this autoresponder has a broken {modifybal} tag !',
-        );
+        throw new EffectError('this reply has a broken {modifybal} tag !');
       }
       if (amount === 0) return;
 
@@ -91,9 +89,7 @@ export const effects = new Map<string, Effect>([
       const delta = parseAmount(args[1] ?? '');
       const targetId = targetIdOf(meta, args[2]);
       if (name.length === 0 || delta === null || !targetId) {
-        throw new EffectError(
-          'this autoresponder has a broken {modifyinv} tag !',
-        );
+        throw new EffectError('this reply has a broken {modifyinv} tag !');
       }
       if (delta === 0) return;
 

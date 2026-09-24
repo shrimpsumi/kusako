@@ -36,7 +36,7 @@ function levelDetailEmbed(
     notes: off
       ? [
           ...notes,
-          `leveling is OFF here, so this never fires yet ! flip it on with ${commandMention('/settings set levels')}`,
+          `leveling is OFF here ! this won't send until you turn it on with ${commandMention('/settings set levels')}`,
         ]
       : notes,
     fields: [
@@ -92,7 +92,7 @@ registerPage('levels', levelsPage);
 export const levels: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('levels')
-    .setDescription('personalized level up replies for this server')
+    .setDescription('custom level up replies for this server')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
       sub
@@ -109,7 +109,7 @@ export const levels: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('reply')
-            .setDescription('what sako sends. variables work here !')
+            .setDescription('what sako sends. tags work here !')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
         ),

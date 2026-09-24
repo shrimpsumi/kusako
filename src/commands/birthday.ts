@@ -30,7 +30,7 @@ function setupNote(guildId: string): string | null {
   const reply = getEventReply(guildId, 'birthday');
   if (reply?.response && reply.channelId) return null;
 
-  return `-# this server hasn't set its birthday message up yet, so nothing will send. an admin can with ${commandMention('/events set')}`;
+  return `-# this server hasn't set its birthday message up yet, so nothing will send. an admin can set it up with ${commandMention('/events set')}`;
 }
 
 export const birthday: SlashCommand = {
@@ -51,13 +51,13 @@ export const birthday: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('timezone')
-            .setDescription('yours, so it lands at YOUR midnight')
+            .setDescription("your timezone, so it's sent at your midnight")
             .setAutocomplete(true)
             .setRequired(false),
         ),
     )
     .addSubcommand((sub) =>
-      sub.setName('remove').setDescription('take your birthday back down'),
+      sub.setName('remove').setDescription('remove your birthday'),
     )
     .addSubcommand((sub) =>
       sub
@@ -128,7 +128,7 @@ export const birthday: SlashCommand = {
       const had = removeBirthday(guildId, interaction.user.id);
       await interaction.reply({
         content: had
-          ? 'took your birthday back down !'
+          ? 'removed your birthday !'
           : "you don't have a birthday saved here !",
       });
       return;

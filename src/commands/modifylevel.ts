@@ -83,10 +83,10 @@ export const modifylevel: SlashCommand = {
         .setName('level')
         .setDescription('edit whole levels')
         .addSubcommand((sub) =>
-          levelSub(sub, 'add', 'raise a member some levels', 1),
+          levelSub(sub, 'add', 'add levels to a member', 1),
         )
         .addSubcommand((sub) =>
-          levelSub(sub, 'remove', 'lower a member some levels', 1),
+          levelSub(sub, 'remove', 'take levels from a member', 1),
         )
         .addSubcommand((sub) =>
           levelSub(sub, 'set', "set a member's exact level", 1),
@@ -151,7 +151,7 @@ export const modifylevel: SlashCommand = {
     const summary = [
       `${member} is now level **${afterLevel}** with **${result.xp.toLocaleString('en-US')}** xp !`,
       crossed > 0
-        ? `-# ✧ firing ${crossed} level up ${crossed === 1 ? 'reply' : 'replies'} they crossed`
+        ? `-# ✧ sent ${crossed} level up ${crossed === 1 ? 'reply' : 'replies'} for the levels they passed`
         : null,
     ]
       .filter((line) => line !== null)

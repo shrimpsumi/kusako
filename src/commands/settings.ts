@@ -135,7 +135,7 @@ export const settings: SlashCommand = {
         .addSubcommand((sub) =>
           sub
             .setName('tickets')
-            .setDescription('where ticket channels live')
+            .setDescription('which categories tickets go in')
             .addChannelOption((o) =>
               o
                 .setName('category')
@@ -154,7 +154,7 @@ export const settings: SlashCommand = {
         .addSubcommand((sub) =>
           sub
             .setName('timezone')
-            .setDescription('set the clock sako reads for scheduled posts')
+            .setDescription('set the timezone sako uses for scheduled posts')
             .addStringOption((o) =>
               o
                 .setName('zone')

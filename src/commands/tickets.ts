@@ -178,7 +178,7 @@ function typeDetailEmbed(guild: Guild, header: string, type: TicketType) {
       { name: 'button', value: look, inline: true },
       { name: 'seen by', value: seenBy(guild, type), inline: true },
       {
-        name: 'opens again after',
+        name: 'wait between tickets',
         value:
           type.cooldownSeconds > 0
             ? `${Math.round(type.cooldownSeconds / 60)} min`
@@ -346,7 +346,7 @@ async function runTypeRemove(
   const active = countActiveTickets(guild.id, key);
   if (active > 0) {
     await interaction.reply({
-      content: `${inlineCode(key)} still has **${active}** ticket${active === 1 ? '' : 's'} open ! close them first, otherwise nobody but whoever opened them could close them after`,
+      content: `${inlineCode(key)} still has **${active}** ticket${active === 1 ? '' : 's'} open ! close them first, or only the people who opened them will be able to`,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -360,7 +360,7 @@ async function runTypeRemove(
         [
           `## removed the ${inlineCode(type.label)} ticket type !`,
           type.greeting ? codeBlock(type.greeting) : '',
-          `-# panels carrying its button just do nothing now,, put it back with ${commandMention('/tickets add')}`,
+          `-# panels with its button just do nothing now,, put it back with ${commandMention('/tickets add')}`,
         ]
           .filter((line) => line.length > 0)
           .join('\n'),
@@ -552,7 +552,7 @@ export const tickets: SlashCommand = {
         roleOptions(
           sub
             .setName('edit')
-            .setDescription('change a ticket type, only what you pass')
+            .setDescription('change a ticket type, blank options stay the same')
             .addStringOption((o) =>
               o
                 .setName('key')
@@ -585,7 +585,7 @@ export const tickets: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('reply')
-            .setDescription('the message, full dsl')
+            .setDescription('what sako says, tags work here !')
             .setMaxLength(GREETING_MAX)
             .setRequired(true),
         ),
@@ -624,7 +624,7 @@ export const tickets: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('message')
-            .setDescription('what the panel says, full dsl')
+            .setDescription('what the panel says, tags work here !')
             .setMaxLength(PANEL_MAX)
             .setRequired(true),
         )
