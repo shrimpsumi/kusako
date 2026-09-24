@@ -16,7 +16,7 @@ export function inventoryPage(guild: Guild, targetId: string, page: number) {
       name: `${member?.displayName ?? 'their'}'s inventory`,
       iconURL: member?.displayAvatarURL(),
     })
-    .setColor(0xb5c99a);
+    .setColor(0xa8c8e8);
 
   if (entries.length === 0) {
     embed.setDescription(

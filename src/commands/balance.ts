@@ -19,7 +19,7 @@ import {
 } from '../services/economy/global.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
-const COLOR = 0xa8c8e8;
+const COLOR = 0xb5c99a;
 const NO_BUFF = '-# ╰ no buff active';
 
 const BOX_PREFIX = 'bal:inv:';
