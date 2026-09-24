@@ -11,7 +11,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/stinkmage/kusako?style=flat&labelColor=8f79c9&color=c9b8ec" alt="license" /></a>
 </p>
 
-kusako is chunky discord bot full of features fit for your community servers! she can handle economy, level roles, custom usable items, server shops, and has a super extensible autoresponder system. sako is written in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file, so you don't gotta host anything besides her !
+kusako is a chunky discord bot full of features for your community servers! she can handle economy, level roles, custom usable items, server shops, and has a super extensible autoresponder system. sako is written in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file, so you don't gotta host anything besides her !
 
 ## overview of sako's features
 
@@ -23,27 +23,28 @@ kusako is chunky discord bot full of features fit for your community servers! sh
 
 - matchmodes: exact, starts with, ends with, or includes for triggers
 - message args: words around a trigger become variables
-- guards, effects, and generators: restrict autoresponders, pay out currency or roles, and handle randomness
-- reply shapes: react, DM, send a reply to a different channel, or split it into multiple messages
+- guards, effects, and generators: restrict autoresponders, give currency or roles, and handle randomness
+- reply options: react, DM, send a reply to a different channel, or split it into multiple messages
 
 ### economy !
 
 - currency: per-server name & emoji
-- items: per-server catalog, each with an optional reply powered by sako's DSL when using an item
+- items: per-server catalog, and each item can have its own reply when used, written with sako's DSL
 - inventories: server members hold items and gift them to one another
 - shop: listings with a price, optional stock, and role requirements
-- global currency: a separate user-scoped balance used globally across servers
+- global currency: a balance that follows you to every server
 
 ### leveling !
 
-- XP per message: 1-10 per message, once per minute
+- XP per message: 1-10 XP, once per minute
 - level up replies: optional per level, powered by the DSL
 
 ### events !
 
-- join and leave: sends a reply in a channel, written with same tags
+- join and leave: sends a reply in a channel, written with the same tags
 - boost: fires when someone boosts
-- fully templated: an event reply can give roles, attach a saved embed, or react to itself
+- birthdays: members save their birthday with `/birthday set`, and sako celebrates on the day
+- fully templated: an event reply can give roles, attach a saved embed, or add reactions to it
 
 ### scheduling !
 
@@ -58,9 +59,9 @@ kusako is chunky discord bot full of features fit for your community servers! sh
 
 ### tickets !
 
-- ticket channels: customizable panel of buttons, and a click opens a private channel
+- ticket channels: a customizable panel of buttons, and clicking one opens a private channel
 - ticket types: create as many ticket types as you want, each with its own visible roles, greeting, and cooldowns
-- close and reopen: closing locks the channel and automatically archives it, staff or opener can reopen
+- close and reopen: closing locks the channel and archives it. staff or whoever opened it can reopen it
 
 ### embeds !
 
@@ -70,8 +71,10 @@ kusako is chunky discord bot full of features fit for your community servers! sh
 
 ### minigames & gambling !
 
-- `/pat`: give sako headpats for server currency tips
-- more coming: coinflip, roulette, blackjack, ride the bus
+- `/pat`: give sako headpats and she'll tip you some currency
+- `/coinflip`, `/blackjack`, and `/roulette`: bet your currency and try your luck
+- `/stats`: see your wins, losses, and streaks for each game
+- more coming: ride the bus
 - fully configurable: disable gambling games, configure min & max bets, and change cooldowns
 
 ### in the works !
@@ -80,7 +83,6 @@ kusako is chunky discord bot full of features fit for your community servers! sh
 - stickies
 - auto-threads
 - `/leaderboard`
-- birthdays
 
 </td>
 </tr>
@@ -121,9 +123,9 @@ a reply is just plain text that can use tags in braces. there are four types of 
 - **guards** decide whether it fires at all: `{requirebal:100}`, `{requirerole:admin}`, `{cooldown:3600}`
 - **effects** change things: `{modifybal:-100}`, `{addrole:verified}`, `{temprole:muted|600}`
 
-if any guard fails, nothing happens and she'll say why. if they all pass, every effect commits together!
+if any guard fails, nothing happens and she'll say why. if they all pass, every effect happens at once!
 
-any typos in placeholders will render as raw text, like `{addrol:}`, instead of disappearing. kusako will also reject things that can't work upon saving instead of misfiring !
+any typos in tags will show up as raw text, like `{addrol:}`, instead of disappearing. kusako will also reject things that can't work when you save them, instead of misfiring later !
 
 a full list of placeholders and examples can be found here: TODO
 
@@ -143,10 +145,10 @@ kusako should have at least these permissions:
 - **manage nicknames**: `{setnick}`
 - **manage channels**: tickets, since she creates and archives channels
 
-only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here. you shouldn't need to hand her **administrator** for anything!
+only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here. she doesn't need **administrator** for anything!
 
 > [!IMPORTANT]
-> **sako's role has to sit ABOVE any role she hands out** in your server's role list. if she's underneath it, the grant just quietly fails. she'll say so when she notices, but it's easily the most common "why isn't this working" !
+> **make sure sako's role is ABOVE any role you want her to give out** in your server's role list! if her role is below it, she can't add it, and this is the most common reason roles don't work !
 
 then:
 
@@ -165,7 +167,7 @@ OWNER_ID=
 LOG_LEVEL=
 ```
 
-`BOT_TOKEN` and `CLIENT_ID` are required. `GUILD_ID` is the server to register commands to while developing, but isn't required. `DB_PATH` defaults to `data/sako.db`. `OWNER_ID` unlocks the owner-only `;global` and `;status` text commands! `LOG_LEVEL` defaults to `info`,set to `debug` for a noisy version. there's a `.env.example` you can copy too !
+`BOT_TOKEN` and `CLIENT_ID` are required. `GUILD_ID` is the server to register commands to while developing, but isn't required. `DB_PATH` defaults to `data/sako.db`. `OWNER_ID` unlocks the owner-only `;global` and `;status` text commands! `LOG_LEVEL` defaults to `info`, set it to `debug` for more detailed logs. there's a `.env.example` you can copy too !
 
 ```sh
 pnpm register
