@@ -4,7 +4,7 @@ import type { SlashCommand } from '../client.js';
 import { getInventory } from '../services/items/store.js';
 import { paginate, applyPage } from '../utils/pagination.js';
 import { registerPage } from '../services/pageRegistry.js';
-import { userEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../utils/style.js';
+import { userEmbed, NO_DMS } from '../utils/style.js';
 
 const FOOTER = 'your global items and buffs are in /balance !';
 
@@ -12,19 +12,17 @@ function inventoryPage(guild: Guild, targetId: string, page: number) {
   const member = guild.members.cache.get(targetId);
   const entries = getInventory(guild.id, targetId);
 
-  const embed = userEmbed(member?.user ?? guild.client.user)
-    .setAuthor({
-      name: `${member?.displayName ?? 'their'}'s inventory`,
-      iconURL: member?.displayAvatarURL(),
-    })
-    .setImage(SPACER_IMAGE);
+  const embed = userEmbed(member?.user ?? guild.client.user).setAuthor({
+    name: `${member?.displayName ?? 'their'}'s inventory`,
+    iconURL: member?.displayAvatarURL(),
+  });
 
   if (entries.length === 0) {
     embed
       .setDescription(['꒰ server ꒱', '-# here be... nothing!'].join('\n'))
       .setFooter({ text: FOOTER });
 
-    return { embeds: [embed], components: [], files: [spacerFile()] };
+    return { embeds: [embed], components: [] };
   }
 
   const total = entries.reduce((sum, entry) => sum + entry.quantity, 0);
@@ -51,7 +49,7 @@ function inventoryPage(guild: Guild, targetId: string, page: number) {
   const current = paginate(blocks, header, hint, page);
   const components = applyPage(embed, `inv:${targetId}`, current, FOOTER);
 
-  return { embeds: [embed], components, files: [spacerFile()] };
+  return { embeds: [embed], components };
 }
 
 registerPage('inv', inventoryPage);

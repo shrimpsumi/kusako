@@ -7,7 +7,7 @@ import {
   GLOBAL_CURRENCY_IDS,
   getGlobalBalances,
 } from '../services/economy/global.js';
-import { userEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../utils/style.js';
+import { userEmbed, NO_DMS } from '../utils/style.js';
 
 const NO_BUFF = '-# ₊˚⊹ no buffs active...';
 
@@ -66,11 +66,10 @@ export const balance: SlashCommand = {
         iconURL: target.displayAvatarURL(),
       })
       .setDescription([server, everywhere, stash].join('\n\n'))
-      .setImage(SPACER_IMAGE)
       .setFooter({
         text: `check your server items with /inventory !`,
       });
 
-    await interaction.reply({ embeds: [embed], files: [spacerFile()] });
+    await interaction.reply({ embeds: [embed] });
   },
 };
