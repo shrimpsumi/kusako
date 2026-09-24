@@ -147,7 +147,7 @@ function roleMenuRows(
         new StringSelectMenuOptionBuilder()
           .setValue(CLEAR_PICK)
           .setLabel('clear roles')
-          .setDescription('takes off everything from this menu')
+          .setDescription('removes all your roles from this menu')
           .setEmoji('❌'),
       );
     }

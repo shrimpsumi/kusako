@@ -185,7 +185,7 @@ export const autoresponders: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('trigger')
-            .setDescription('the trigger for autoresponder to delete')
+            .setDescription('the autoresponder to delete')
             .setMaxLength(TRIGGER_MAX)
             .setRequired(true)
             .setAutocomplete(true),

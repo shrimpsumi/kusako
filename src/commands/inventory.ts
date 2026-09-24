@@ -6,7 +6,7 @@ import { paginate, applyPage } from '../utils/pagination.js';
 import { registerPage } from '../services/pageRegistry.js';
 import { userEmbed, spacerFile, SPACER_IMAGE, NO_DMS } from '../utils/style.js';
 
-const FOOTER = 'global stash lives in /balance !';
+const FOOTER = 'your global items and buffs are in /balance !';
 
 function inventoryPage(guild: Guild, targetId: string, page: number) {
   const member = guild.members.cache.get(targetId);

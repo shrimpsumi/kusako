@@ -164,7 +164,8 @@ export function registerInteractionCreate(client: SakoClient): void {
       await command.execute(interaction);
     } catch (err) {
       logger.error({ err, name: interaction.commandName }, 'command failed');
-      const content = 'something broke running that command. check the logs.';
+      const content =
+        'something broke running that command,, try again in a bit !';
       if (interaction.replied || interaction.deferred) {
         await interaction
           .followUp({ content, flags: MessageFlags.Ephemeral })

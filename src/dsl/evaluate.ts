@@ -574,7 +574,7 @@ export async function evaluate(
       if (targetRaw.length > 0) {
         const targetId = userIdOf(targetRaw);
         if (!targetId) {
-          return fail(`this autoresponder has a broken {${node.name}} tag !`);
+          return fail(`this reply has a broken {${node.name}} tag !`);
         }
         const member = await resolveMemberArg(ctx, targetId);
         if (!member) {
@@ -586,7 +586,7 @@ export async function evaluate(
         subject = { member, isSelf: member.id === ctx.member?.id };
       } else {
         if (!ctx.member) {
-          return fail(`this autoresponder has a broken {${node.name}} tag !`);
+          return fail(`this reply has a broken {${node.name}} tag !`);
         }
         subject = { member: ctx.member, isSelf: true };
       }

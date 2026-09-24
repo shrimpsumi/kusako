@@ -82,7 +82,7 @@ export const SETTINGS: SettingEntry[] = [
     id: 'timezone',
     group: 'schedule',
     label: 'timezone',
-    blurb: 'the clock sako reads when she posts on a schedule !',
+    blurb: 'the timezone sako uses for scheduled posts !',
     command: '/settings set timezone',
     knobs: ['zone'],
     render(guildId) {

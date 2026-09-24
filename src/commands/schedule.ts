@@ -196,7 +196,7 @@ async function handleAdd(
     await interaction.reply({
       embeds: [
         failureEmbed(
-          `i don't know what clock this server runs on yet... set it with ${commandMention('/settings set timezone')} and try again`,
+          `i don't know this server's timezone yet... set it with ${commandMention('/settings set timezone')} and try again`,
         ),
       ],
     });
@@ -352,10 +352,7 @@ async function handleEdit(
     await interaction.reply({
       embeds: [
         failureEmbed(
-          wrongKind(
-            'interval',
-            'only `/schedule add every` posts repeat on one',
-          ),
+          wrongKind('interval', 'only repeating posts have an interval'),
         ),
       ],
     });
@@ -363,11 +360,7 @@ async function handleEdit(
   }
   if (when !== null && found.repeatKind !== 'once') {
     await interaction.reply({
-      embeds: [
-        failureEmbed(
-          wrongKind('in', 'only one time posts are scheduled that way'),
-        ),
-      ],
+      embeds: [failureEmbed(wrongKind('in', 'only one time posts use `in:`'))],
     });
     return;
   }

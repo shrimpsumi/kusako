@@ -99,7 +99,7 @@ export async function handleButtonResponderComponents(
       : [
           `## deleted the ${inlineCode(doomed.name)} button !`,
           codeBlock(doomed.response),
-          `-# old messages carrying it just do nothing now,, put it back with ${commandMention('/buttonresponders add')}`,
+          `-# old messages with this button just do nothing now,, put it back with ${commandMention('/buttonresponders add')}`,
         ].join('\n'),
   );
 
@@ -149,7 +149,7 @@ function lookOptions(
     .addBooleanOption((o) =>
       o
         .setName('invokeronly')
-        .setDescription('only whoever triggered the message can click it')
+        .setDescription('only the person who triggered the reply can click it')
         .setRequired(false),
     );
 }
@@ -185,7 +185,7 @@ function lookFields(name: string, look: ButtonResponder | ButtonLook) {
   const limit = getButtonLimit(look.limitMode ?? null);
   const limits = [
     limit ? limit.blurb : null,
-    look.invokerOnly ? 'only whoever triggered the message' : null,
+    look.invokerOnly ? 'only the person who triggered the reply' : null,
   ].filter((part) => part !== null);
 
   const fields = [
@@ -209,7 +209,7 @@ function buttonDetailEmbed(
   const extra = [...notes];
   if (getButtonLimit(look.limitMode ?? null)?.perButton === false) {
     extra.push(
-      'the "any button here" limits only cover buttons that carry the same setting, so put it on every button in the group !',
+      'put this limit on every button in the group, or it only counts the ones that have it !',
     );
   }
 
@@ -498,7 +498,7 @@ export const buttonresponders: SlashCommand = {
             [
               `## delete the ${inlineCode(responder.name)} button ?`,
               codeBlock(responder.response),
-              `-# any message still carrying this button just stops doing anything on click. there's no undo,,,, copy the reply above if you might want it back !`,
+              `-# any message with this button just stops doing anything on click. there's no undo,,,, copy the reply above if you might want it back !`,
             ].join('\n'),
           ),
         ],

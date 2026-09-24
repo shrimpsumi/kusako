@@ -376,7 +376,7 @@ function panelPayload(record: EmbedRecord) {
   const { embed, hidden } = previewOf(record.data);
   const note =
     hidden.length > 0
-      ? `\n-# ${hidden.join(', ')} hidden in preview,, placeholder urls resolve when it sends !`
+      ? `\n-# ${hidden.join(', ')} hidden in preview since they use tags,, they'll show up once it's sent !`
       : '';
 
   return {
@@ -482,7 +482,7 @@ export async function handleEmbedComponents(
       deleteEmbed(interaction.guildId, nameKey);
       embed
         .setTitle('embed deleted !')
-        .setDescription(`deleted the ${inlineCode(existing.name)} embed.`);
+        .setDescription(`deleted the ${inlineCode(existing.name)} embed !`);
     }
 
     await interaction.update({ embeds: [embed], components: [] });
@@ -675,7 +675,7 @@ export const embeds: SlashCommand = {
 
       if (!created) {
         await interaction.reply({
-          content: `an embed named ${inlineCode(name)} already exists. use ${inlineCode('/embeds edit')} to change it.`,
+          content: `there's already an embed named ${inlineCode(name)} ! change it with ${inlineCode('/embeds edit')}`,
         });
         return;
       }
@@ -693,7 +693,7 @@ export const embeds: SlashCommand = {
 
       if (!record) {
         await interaction.reply({
-          content: `no embed named ${inlineCode(name)} exists yet. use ${inlineCode('/embeds add')} to make one.`,
+          content: `there's no embed named ${inlineCode(name)} yet ! make one with ${inlineCode('/embeds add')}`,
         });
         return;
       }
@@ -749,7 +749,7 @@ export const embeds: SlashCommand = {
       await interaction.reply({
         content:
           hidden.length > 0
-            ? `-# ${hidden.join(', ')} hidden in preview,, placeholder urls resolve when it sends !`
+            ? `-# ${hidden.join(', ')} hidden in preview since they use tags,, they'll show up once it's sent !`
             : undefined,
         embeds: [embed],
       });

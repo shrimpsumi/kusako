@@ -69,7 +69,7 @@ export const events: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('reply')
-            .setDescription('what sako sends. variables work here !')
+            .setDescription('what sako sends. tags work here !')
             .setMaxLength(RESPONSE_MAX)
             .setRequired(true),
         ),
@@ -93,13 +93,13 @@ export const events: SlashCommand = {
     .addSubcommand((sub) =>
       sub
         .setName('show')
-        .setDescription("show an event's raw message")
+        .setDescription("show an event's raw reply")
         .addStringOption(eventOption),
     )
     .addSubcommand((sub) =>
       sub
         .setName('remove')
-        .setDescription("remove an event's message")
+        .setDescription("remove an event's reply")
         .addStringOption(eventOption),
     )
     .addSubcommand((sub) =>
@@ -271,7 +271,7 @@ export const events: SlashCommand = {
           [
             `## fired a test ${inlineCode(kind)} !`,
             `it went to ${channelMention(outcome.channelId)} :3c`,
-            `-# effects and cooldowns commit for real on tests !`,
+            `-# tests are real, so anything the reply gives or takes actually happens !`,
           ].join('\n'),
         );
         await interaction.reply({ embeds: [embed] });

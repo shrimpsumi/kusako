@@ -172,7 +172,7 @@ export async function handleItemComponents(
   const embed = serverEmbed(interaction.guild)
     .setTitle('item deleted !')
     .setDescription(
-      `deleted ${item.emoji ?? '📦'} **${item.name}** and removed it from everyone's inventories.`,
+      `deleted ${item.emoji ?? '📦'} **${item.name}** and removed it from everyone's inventories !`,
     );
 
   await interaction.update({ embeds: [embed], components: [] });
@@ -186,7 +186,7 @@ function itemsPage(guild: Guild, _userId: string, page: number) {
       .setTitle('server items !')
       .setColor(0xffe499)
       .setDescription(
-        `no items yet. make one with ${inlineCode('/items add')} c:`,
+        `no items yet,, make one with ${inlineCode('/items add')} c:`,
       );
 
     return { embeds: [embed], components: [] };
@@ -434,7 +434,9 @@ export const items: SlashCommand = {
 
       if (!created) {
         await interaction.reply({
-          content: `an item called ${inlineCode(name)} already exists (or the name is empty). use ${inlineCode('/items edit')} to change it !`,
+          content: name.trim()
+            ? `there's already an item called ${inlineCode(name)} ! change it with ${inlineCode('/items edit')}`
+            : "the item name can't be blank !",
         });
         return;
       }

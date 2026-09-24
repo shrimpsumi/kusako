@@ -166,7 +166,7 @@ export const guards = new Map<string, Guard>([
       if (amount === null || amount <= 0) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requirebal} tag !',
+          message: 'this reply has a broken {requirebal} tag !',
         };
       }
 
@@ -199,7 +199,7 @@ export const guards = new Map<string, Guard>([
       if (name.length === 0 || quantity === null || quantity <= 0) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requireitem} tag !',
+          message: 'this reply has a broken {requireitem} tag !',
         };
       }
 
@@ -238,7 +238,7 @@ export const guards = new Map<string, Guard>([
       if (level === null || level <= 0) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requirelevel} tag !',
+          message: 'this reply has a broken {requirelevel} tag !',
         };
       }
 
@@ -267,7 +267,7 @@ export const guards = new Map<string, Guard>([
       if (raw.length === 0) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requirechannel} tag !',
+          message: 'this reply has a broken {requirechannel} tag !',
         };
       }
 
@@ -307,7 +307,7 @@ export const guards = new Map<string, Guard>([
       if (raw.length === 0) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requirerole} tag !',
+          message: 'this reply has a broken {requirerole} tag !',
         };
       }
 
@@ -337,7 +337,7 @@ export const guards = new Map<string, Guard>([
         return {
           ok: false,
           message: subject.isSelf
-            ? `sorry, the **${role.name}** role can't touch this one~`
+            ? `sorry, people with the **${role.name}** role can't use this one~`
             : `${subject.member.toString()} has the **${role.name}** role, so that's a no~`,
         };
       }
@@ -351,7 +351,7 @@ export const guards = new Map<string, Guard>([
       if (!id) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requireuser} tag !',
+          message: 'this reply has a broken {requireuser} tag !',
         };
       }
 
@@ -369,7 +369,7 @@ export const guards = new Map<string, Guard>([
       if (needed === null || needed <= 0 || (typeName.length > 0 && !type)) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requirearg} tag !',
+          message: 'this reply has a broken {requirearg} tag !',
         };
       }
 
@@ -377,7 +377,7 @@ export const guards = new Map<string, Guard>([
       if (words.length < needed) {
         return {
           ok: false,
-          message: `that needs at least ${needed} word${needed === 1 ? '' : 's'} with it..... you gave ${words.length}`,
+          message: `that needs at least ${needed} word${needed === 1 ? '' : 's'} along with the trigger,, you gave ${words.length}`,
           data: {
             'requirearg.needed': String(needed),
             'requirearg.have': String(words.length),
@@ -418,7 +418,7 @@ export const guards = new Map<string, Guard>([
       if (!perm) {
         return {
           ok: false,
-          message: 'this autoresponder has a broken {requireperm} tag !',
+          message: 'this reply has a broken {requireperm} tag !',
         };
       }
 
