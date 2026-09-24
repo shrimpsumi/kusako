@@ -7,7 +7,7 @@ import { registerPage } from '../services/pageRegistry.js';
 import { commandMention } from '../utils/commandMentions.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
-function inventoryPage(guild: Guild, targetId: string, page: number) {
+export function inventoryPage(guild: Guild, targetId: string, page: number) {
   const member = guild.members.cache.get(targetId);
   const entries = getInventory(guild.id, targetId);
 

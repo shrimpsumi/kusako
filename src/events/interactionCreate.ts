@@ -26,6 +26,7 @@ import {
   isBlackjackButton,
   handleBlackjackButton,
 } from '../commands/blackjack.js';
+import { isBalanceButton, handleBalanceButton } from '../commands/balance.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -111,6 +112,15 @@ export function registerInteractionCreate(client: SakoClient): void {
           { err, id: interaction.customId },
           'blackjack button failed',
         );
+      }
+      return;
+    }
+
+    if (interaction.isButton() && isBalanceButton(interaction.customId)) {
+      try {
+        await handleBalanceButton(interaction);
+      } catch (err) {
+        logger.error({ err, id: interaction.customId }, 'balance box failed');
       }
       return;
     }

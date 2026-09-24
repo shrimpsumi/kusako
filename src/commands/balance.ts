@@ -1,6 +1,16 @@
-import { EmbedBuilder, SlashCommandBuilder, escapeMarkdown } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  MessageFlags,
+  SlashCommandBuilder,
+  escapeMarkdown,
+  type ButtonInteraction,
+} from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
+import { inventoryPage } from './inventory.js';
 import { getBalance, getCurrency } from '../services/economy/guild.js';
 import {
   GLOBAL_CURRENCIES,
@@ -12,8 +22,42 @@ import { userEmbed, NO_DMS } from '../utils/style.js';
 const COLOR = 0xa8c8e8;
 const NO_BUFF = '-# ╰ no buff active';
 
+const BOX_PREFIX = 'bal:inv:';
+
 function currencyLines(emoji: string, amount: number, name: string) {
   return [`${emoji} **${amount.toLocaleString('en-US')}** ${name}`, NO_BUFF];
+}
+
+function boxRow(ownerId: string, disabled = false) {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`${BOX_PREFIX}${ownerId}`)
+      .setEmoji('📦')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled),
+  );
+}
+
+export function isBalanceButton(customId: string): boolean {
+  return customId.startsWith(BOX_PREFIX);
+}
+
+export async function handleBalanceButton(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  if (!interaction.inCachedGuild()) return;
+
+  const ownerId = interaction.customId.slice(BOX_PREFIX.length);
+  if (ownerId !== interaction.user.id) {
+    await interaction.reply({
+      content: "this one isn't yours to press !",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  await interaction.update({ components: [boxRow(ownerId, true)] });
+  await interaction.followUp(inventoryPage(interaction.guild, ownerId, 0));
 }
 
 export const balance: SlashCommand = {
@@ -75,6 +119,9 @@ export const balance: SlashCommand = {
           : `nothing in ${nickname}'s stash yet...`,
       );
 
-    await interaction.reply({ embeds: [pockets, stash] });
+    await interaction.reply({
+      embeds: [pockets, stash],
+      components: self ? [boxRow(target.id)] : [],
+    });
   },
 };
