@@ -82,6 +82,10 @@ export function hit(game: BlackjackGame): Card {
   return card;
 }
 
+export function canDouble(game: BlackjackGame): boolean {
+  return game.player.length === 2 && !game.doubled;
+}
+
 export function doubleDown(game: BlackjackGame): Card {
   game.bet *= 2;
   game.doubled = true;
@@ -91,6 +95,8 @@ export function doubleDown(game: BlackjackGame): Card {
 }
 
 export function dealerPlay(game: BlackjackGame): void {
+  if (isBust(game.player) || isBlackjack(game.player)) return;
+
   while (shouldDealerHit(game.dealer)) {
     game.dealer.push(game.deck.pop()!);
   }

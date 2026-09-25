@@ -54,7 +54,7 @@ export const stats: SlashCommand = {
 
     if (!record) {
       const who = isSelf ? "you haven't" : `${nickname} hasn't`;
-      embed.setDescription(`${who} played any ${entry.id} yet!`);
+      embed.setDescription(`${who} played any ${entry.id} yet !`);
       await interaction.reply({ embeds: [embed] });
       return;
     }

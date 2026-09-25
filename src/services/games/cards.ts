@@ -168,11 +168,3 @@ export function createDeck(): Card[] {
 
   return deck;
 }
-
-export function rankLabel(rank: Rank): string {
-  if (rank === 'A') return 'ace';
-  if (rank === 'J') return 'jack';
-  if (rank === 'Q') return 'queen';
-  if (rank === 'K') return 'king';
-  return String(Number(rank));
-}

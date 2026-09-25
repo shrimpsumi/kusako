@@ -23,6 +23,7 @@ import {
   getGame,
   hasGame,
   hit,
+  canDouble,
   doubleDown,
   dealerPlay,
   resolve,
@@ -82,7 +83,6 @@ function gameEmbed(
 }
 
 function actionRow(game: BlackjackGame): ActionRowBuilder<ButtonBuilder> {
-  const canDouble = game.player.length === 2 && !game.doubled;
   const id = (action: string) => `${BJ_PREFIX}${game.userId}:${action}`;
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -98,7 +98,7 @@ function actionRow(game: BlackjackGame): ActionRowBuilder<ButtonBuilder> {
       .setCustomId(id('double'))
       .setLabel('double down')
       .setStyle(ButtonStyle.Danger)
-      .setDisabled(!canDouble),
+      .setDisabled(!canDouble(game)),
   );
 }
 
@@ -110,10 +110,10 @@ function resultEmbed(
   currency: { emoji: string; name: string },
   balance: number,
 ): EmbedBuilder {
-  const sign = delta > 0 ? '+' : '';
+  const sign = delta > 0 ? '+' : '-';
   const deltaLine =
     delta !== 0
-      ? `${sign}${currency.emoji} **${delta.toLocaleString('en-US')}**`
+      ? `${sign}${currency.emoji} **${Math.abs(delta).toLocaleString('en-US')}**`
       : 'bet returned';
 
   return gameEmbed(user, game, true, deltaLine)
@@ -207,6 +207,14 @@ export async function handleBlackjackButton(
   }
 
   if (action === 'double') {
+    if (!canDouble(game)) {
+      await interaction.reply({
+        content: 'you can only double down on your first two cards !',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     const extra = modifyBalance(
       guildId,
       game.userId,
