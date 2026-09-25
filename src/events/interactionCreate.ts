@@ -27,6 +27,7 @@ import {
   handleBlackjackButton,
 } from '../commands/blackjack.js';
 import { isBalanceButton, handleBalanceButton } from '../commands/balance.js';
+import { handleSettingsComponents } from '../commands/settings.js';
 import { logger } from '../logger.js';
 
 export function registerInteractionCreate(client: SakoClient): void {
@@ -112,6 +113,28 @@ export function registerInteractionCreate(client: SakoClient): void {
           { err, id: interaction.customId },
           'blackjack button failed',
         );
+      }
+      return;
+    }
+
+    if (
+      (interaction.isStringSelectMenu() || interaction.isButton()) &&
+      interaction.customId.startsWith('settings:')
+    ) {
+      try {
+        await handleSettingsComponents(interaction);
+      } catch (err) {
+        logger.error(
+          { err, id: interaction.customId },
+          'settings panel failed',
+        );
+        await interaction
+          .reply({
+            content:
+              'that panel is too old to use,, run /settings view again !',
+            flags: MessageFlags.Ephemeral,
+          })
+          .catch(() => {});
       }
       return;
     }
