@@ -173,7 +173,7 @@ export const birthday: SlashCommand = {
     const blocks = upcoming.map((entry) => {
       const when = formatBirthday(entry.month, entry.day);
       const isToday = sortKey(entry.month, entry.day) === todayKey;
-      return `<@${entry.userId}>\n-# ﹒${when}${isToday ? ' :: today !!' : ''}`;
+      return `<@${entry.userId}>\n-# ${when}${isToday ? ' :: today !!' : ''}`;
     });
 
     const hint = `<:arrowright:1545483910022959194> add yours with ${commandMention('/birthday set')} !`;

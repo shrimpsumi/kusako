@@ -294,7 +294,7 @@ function structureOf(data: EmbedData): string[] {
 function usageLine(usage: EmbedUsage | undefined): string {
   if (!usage || usage.users.length === 0) return 'not used anywhere yet';
 
-  const shown = usage.users.slice(0, 3).join(' ━ ');
+  const shown = usage.users.slice(0, 3).join(', ');
   const extra =
     usage.users.length > 3 ? ` +${usage.users.length - 3} more` : '';
   return `used by ${shown}${extra}`;

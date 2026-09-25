@@ -1,9 +1,9 @@
-import { SlashCommandBuilder, inlineCode } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, transferBalance } from '../services/economy/guild.js';
 import { getItem, transferItem } from '../services/items/store.js';
-import { respondWithItemNames } from './items.js';
+import { respondWithItemNames, noItemEmbed } from './items.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
 const MIN_GIVE = 10;
@@ -126,7 +126,7 @@ export const give: SlashCommand = {
       const item = getItem(guildId, name);
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} !`,
+          embeds: [noItemEmbed(interaction.guild, name)],
         });
         return;
       }

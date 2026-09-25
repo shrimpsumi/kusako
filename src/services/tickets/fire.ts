@@ -308,7 +308,7 @@ export async function closeTicket(
 
   await channel
     .send({
-      content: `-# ✦ closed by <@${interaction.user.id}>${moved ? '' : ' · i left it here, the archive category is full or missing'}`,
+      content: `-# closed by <@${interaction.user.id}>${moved ? '' : ' · i left it here, the archive category is full or missing'}`,
       allowedMentions: { parse: [] },
     })
     .catch(() => null);
@@ -384,7 +384,7 @@ export async function reopenTicket(
     .send({
       content: moved
         ? notice
-        : `${notice}\n-# ✦ i couldn't move it back, the tickets category is full or missing`,
+        : `${notice}\n-# i couldn't move it back, the tickets category is full or missing`,
       allowedMentions: { users: byOpener ? [] : [ticket.openerId] },
     })
     .catch(() => null);

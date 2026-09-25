@@ -36,6 +36,7 @@ import { evaluate } from '../dsl/evaluate.js';
 import { deliver } from '../dsl/deliver.js';
 import { paginate, applyPage } from '../utils/pagination.js';
 import { registerPage } from '../services/pageRegistry.js';
+import { commandMention } from '../utils/commandMentions.js';
 
 const NAME_MAX = 50;
 const DESCRIPTION_MAX = 200;
@@ -65,6 +66,12 @@ function rolesOnUse(useReply: string | null): string | null {
     .filter((arg) => arg !== '')
     .map((arg) => (/^\d+$/.test(arg) ? `<@&${arg}>` : arg));
   return roles.length ? roles.join(', ') : null;
+}
+
+export function noItemEmbed(guild: Guild, name: string) {
+  return serverEmbed(guild).setDescription(
+    `## there's no ${inlineCode(name)} item !\nsee them all with ${commandMention('/items list')}`,
+  );
 }
 
 function itemCard(guild: Guild, item: Item, label: string) {
@@ -479,7 +486,7 @@ export const items: SlashCommand = {
       const existing = getItem(guildId, name);
       if (!existing) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} !`,
+          embeds: [noItemEmbed(interaction.guild, name)],
         });
         return;
       }
@@ -522,7 +529,7 @@ export const items: SlashCommand = {
 
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} !`,
+          embeds: [noItemEmbed(interaction.guild, name)],
         });
         return;
       }
@@ -547,7 +554,7 @@ export const items: SlashCommand = {
 
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} !`,
+          embeds: [noItemEmbed(interaction.guild, name)],
         });
         return;
       }
@@ -564,7 +571,7 @@ export const items: SlashCommand = {
 
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} !`,
+          embeds: [noItemEmbed(interaction.guild, name)],
         });
         return;
       }
