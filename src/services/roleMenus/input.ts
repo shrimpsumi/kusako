@@ -208,7 +208,7 @@ export async function handleRoleMenuInput(message: Message): Promise<boolean> {
 
   await message.channel
     .send(
-      `✦ saved **${result.entries.length}** role${result.entries.length === 1 ? '' : 's'} to ${menu.name} ! drop it somewhere with \`{rolemenu:${menu.name}}\``,
+      `saved **${result.entries.length}** role${result.entries.length === 1 ? '' : 's'} to ${menu.name},, drop it anywhere with \`{rolemenu:${menu.name}}\` !`,
     )
     .catch(() => null);
   await message.delete().catch(() => null);

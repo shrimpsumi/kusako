@@ -90,19 +90,13 @@ export function pageRow(
   );
 }
 
-export function pageFooter(page: Page, suffix?: string): string {
-  const base = `page ${page.index + 1} of ${page.total}`;
-  return suffix ? `${base} ━━━ ${suffix}` : base;
+export function pageFooter(page: Page): string {
+  return `page ${page.index + 1} of ${page.total}`;
 }
 
-export function applyPage(
-  embed: EmbedBuilder,
-  listKey: string,
-  page: Page,
-  footerSuffix?: string,
-) {
+export function applyPage(embed: EmbedBuilder, listKey: string, page: Page) {
   embed.setDescription(page.description).setFooter({
-    text: pageFooter(page, footerSuffix),
+    text: pageFooter(page),
   });
 
   const row = pageRow(listKey, page);

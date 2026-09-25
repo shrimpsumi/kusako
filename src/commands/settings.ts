@@ -357,12 +357,12 @@ export const settings: SlashCommand = {
 
       if (missing.length > 0) {
         lines.push(
-          `-# ✧ i'm missing **${missing.join('** and **')}** ! i can't make ticket channels at all until someone gives me that`,
+          `-# i'm missing **${missing.join('** and **')}**, so i can't make ticket channels at all until someone gives me that`,
         );
       }
       if (unreachable.length > 0) {
         lines.push(
-          `-# ✧ i can't manage channels inside ${unreachable.join(' or ')},, check my permissions there`,
+          `-# i can't manage channels inside ${unreachable.join(' or ')},, check my permissions there`,
         );
       }
 

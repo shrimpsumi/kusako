@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  inlineCode,
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import {
@@ -11,7 +7,7 @@ import {
   setInventory,
 } from '../services/items/store.js';
 import { serverEmbed, NO_DMS } from '../utils/style.js';
-import { respondWithItemNames } from './items.js';
+import { respondWithItemNames, noItemEmbed } from './items.js';
 
 const NAME_MAX = 50;
 
@@ -109,7 +105,7 @@ export const modifyinventory: SlashCommand = {
     const item = getItem(guildId, itemName);
     if (!item) {
       await interaction.reply({
-        content: `there's no item called ${inlineCode(itemName)} !`,
+        embeds: [noItemEmbed(interaction.guild, itemName)],
       });
       return;
     }

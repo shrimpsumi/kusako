@@ -151,7 +151,7 @@ export const modifylevel: SlashCommand = {
     const summary = [
       `${member} is now level **${afterLevel}** with **${result.xp.toLocaleString('en-US')}** xp !`,
       crossed > 0
-        ? `-# ✧ sent ${crossed} level up ${crossed === 1 ? 'reply' : 'replies'} for the levels they passed`
+        ? `-# sent ${crossed} level up ${crossed === 1 ? 'reply' : 'replies'} for the levels they passed`
         : null,
     ]
       .filter((line) => line !== null)

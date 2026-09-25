@@ -62,7 +62,7 @@ export const SETTINGS: SettingEntry[] = [
       const pat = getPatSettings(guildId);
       const currency = getCurrency(guildId);
       return [
-        `on ━ ${currency.emoji} ${pat.minReward.toLocaleString('en-US')}-${pat.maxReward.toLocaleString('en-US')} per pat`,
+        `on · ${currency.emoji} ${pat.minReward.toLocaleString('en-US')}-${pat.maxReward.toLocaleString('en-US')} per pat`,
         `every ${formatDuration(pat.cooldownSeconds)}`,
       ];
     },
@@ -88,7 +88,7 @@ export const SETTINGS: SettingEntry[] = [
     render(guildId) {
       return hasGuildTimezone(guildId)
         ? [getGuildTimezone(guildId)]
-        : [`${DEFAULT_TIMEZONE} ━ not set yet`];
+        : [`${DEFAULT_TIMEZONE} · not set yet`];
     },
   },
   ...EVENTS.map((event) => ({

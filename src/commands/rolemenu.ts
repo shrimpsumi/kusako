@@ -41,8 +41,8 @@ const PLACEHOLDER_MAX = 150;
 
 const STYLE_CHOICES = MENU_STYLES.map((id) => ({ name: id, value: id }));
 const MODE_CHOICES = [
-  { name: 'multi ━ pick as many as you like', value: 'multi' },
-  { name: 'single ━ picking one drops the others', value: 'single' },
+  { name: 'multi (pick as many as you like)', value: 'multi' },
+  { name: 'single (picking one drops the others)', value: 'single' },
 ];
 const COLOR_CHOICES = STYLE_IDS.map((id) => ({ name: id, value: id }));
 
@@ -115,7 +115,7 @@ function pasteHint(guild: Guild, menu: RoleMenu): string {
     `paste your roles here as one message, one per line ! you've got ${Math.round(PENDING_MS / 60_000)} minutes, or say ${inlineCode('cancel')}`,
     codeBlock('@role | label | emoji'),
     `label and emoji are optional,, up to **${MAX_MENU_ROLES}** roles`,
-    `-# ✧ role mentions can ping, so do this somewhere quiet !`,
+    `-# role mentions can ping, so do this somewhere quiet !`,
   ];
 
   if (current.length > 0) {

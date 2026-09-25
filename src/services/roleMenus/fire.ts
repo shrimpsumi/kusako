@@ -92,7 +92,7 @@ export async function fireRoleMenu(
   const receipt = receiptFor(add, remove);
   const note =
     blocked > 0
-      ? `\n-# ✧ ${blocked} role${blocked === 1 ? '' : 's'} here sit${blocked === 1 ? 's' : ''} above me, so i left ${blocked === 1 ? 'it' : 'them'} alone`
+      ? `\n-# ${blocked} role${blocked === 1 ? '' : 's'} here sit${blocked === 1 ? 's' : ''} above me, so i left ${blocked === 1 ? 'it' : 'them'} alone`
       : '';
 
   await nudge(interaction, `${receipt}${note}`);
