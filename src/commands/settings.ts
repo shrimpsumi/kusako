@@ -1,6 +1,7 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  inlineCode,
   ChannelType,
   MessageFlags,
   ActionRowBuilder,
@@ -8,6 +9,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   type ButtonInteraction,
+  type ChatInputCommandInteraction,
   type Guild,
   type StringSelectMenuInteraction,
 } from 'discord.js';
@@ -23,30 +25,24 @@ import {
 import { commandMention } from '../utils/commandMentions.js';
 import { setGuildSetting } from '../services/guildSettings.js';
 import {
-  getTicketCategories,
   TICKET_CATEGORY_KEY,
   TICKET_ARCHIVE_KEY,
 } from '../services/tickets/store.js';
 import { missingTicketPerms } from '../services/tickets/fire.js';
-import { getCurrency, setCurrency } from '../services/economy/guild.js';
+import { setCurrency } from '../services/economy/guild.js';
 import {
   getPatSettings,
   setPatSettings,
   getGamblingSettings,
   setGamblingSettings,
-  isGamblingEnabled,
   setGamblingEnabled,
-  isGameEnabled,
   setGameEnabled,
 } from '../services/games/store.js';
 import { setLevelingEnabled } from '../services/levels/store.js';
-import { formatDuration } from '../dsl/args.js';
 import {
   isValidTimeZone,
   setGuildTimezone,
   timeZoneChoices,
-  zonedParts,
-  formatWallTime,
 } from '../services/timezone.js';
 import { serverEmbed, NO_DMS } from '../utils/style.js';
 
@@ -188,6 +184,38 @@ export async function handleSettingsComponents(
     embeds: [settingEmbed(guild, setting)],
     flags: MessageFlags.Ephemeral,
   });
+}
+
+function settingsReply(
+  guild: Guild,
+  heading: string,
+  body: string[],
+  notes: string[] = [],
+) {
+  const lines = [`## ${heading}`, ...body];
+  if (notes.length > 0) lines.push('', ...notes.map((note) => `> ${note}`));
+  lines.push(
+    '',
+    `${ARROW} see everything with ${commandMention('/settings view')}`,
+  );
+  return { embeds: [serverEmbed(guild).setDescription(lines.join('\n'))] };
+}
+
+function updatedReply(
+  interaction: ChatInputCommandInteraction<'cached'>,
+  setting: SettingEntry,
+  notes: string[] = [],
+) {
+  const lines = setting.knobs
+    .filter((knob) => interaction.options.get(knob.option) !== null)
+    .map((knob) => `${knob.option}: ${knob.value(interaction.guildId)}`);
+
+  return settingsReply(
+    interaction.guild,
+    `settings updated for ${inlineCode(setting.label)}`,
+    lines,
+    notes,
+  );
 }
 
 export const settings: SlashCommand = {
@@ -346,13 +374,10 @@ export const settings: SlashCommand = {
     if (group === 'set' && sub === 'currency') {
       const name = interaction.options.getString('name', true);
       const emoji = interaction.options.getString('emoji', true);
+      const setting = findSetting('currency')!;
       setCurrency(guildId, { name, emoji });
 
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('currency updated !')
-        .setDescription(`this server's currency is now ${emoji} **${name}** !`);
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(updatedReply(interaction, setting));
       return;
     }
 
@@ -385,6 +410,7 @@ export const settings: SlashCommand = {
         return;
       }
 
+      const setting = findSetting('pat')!;
       setPatSettings(guildId, {
         ...(min !== null ? { minReward: min } : {}),
         ...(max !== null ? { maxReward: max } : {}),
@@ -392,16 +418,7 @@ export const settings: SlashCommand = {
       });
       if (enabled !== null) setGameEnabled(guildId, 'pat', enabled);
 
-      const now = getPatSettings(guildId);
-      const currency = getCurrency(guildId);
-      const state = isGameEnabled(guildId, 'pat') ? 'on' : 'off';
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('head pats updated !')
-        .setDescription(
-          `reward: ${currency.emoji} **${now.minReward.toLocaleString('en-US')}-${now.maxReward.toLocaleString('en-US')}**, cooldown: **${formatDuration(now.cooldownSeconds)}**, pats are **${state}** !`,
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(updatedReply(interaction, setting));
       return;
     }
 
@@ -427,24 +444,14 @@ export const settings: SlashCommand = {
         return;
       }
 
+      const setting = findSetting('gambling')!;
       setGamblingSettings(guildId, {
         ...(min !== null ? { minBet: min } : {}),
         ...(max !== null ? { maxBet: max } : {}),
       });
       if (enabled !== null) setGamblingEnabled(guildId, enabled);
 
-      const now = getGamblingSettings(guildId);
-      const currency = getCurrency(guildId);
-      const state = isGamblingEnabled(guildId) ? 'on' : 'off';
-      const maxLabel =
-        now.maxBet === 0 ? 'no limit' : now.maxBet.toLocaleString('en-US');
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('gambling updated !')
-        .setDescription(
-          `bets: ${currency.emoji} **${now.minBet.toLocaleString('en-US')}** min, **${maxLabel}** max, gambling is **${state}** !`,
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(updatedReply(interaction, setting));
       return;
     }
 
@@ -457,15 +464,10 @@ export const settings: SlashCommand = {
         return;
       }
 
+      const setting = findSetting('timezone')!;
       setGuildTimezone(guildId, zone);
-      const now = zonedParts(Date.now(), zone);
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('timezone updated !')
-        .setDescription(
-          `scheduled posts follow **${zone}** now; it's ${formatWallTime(now.hour * 60 + now.minute)} there`,
-        );
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(updatedReply(interaction, setting));
       return;
     }
 
@@ -482,19 +484,11 @@ export const settings: SlashCommand = {
         return;
       }
 
+      const setting = findSetting('tickets')!;
       if (live) setGuildSetting(guildId, TICKET_CATEGORY_KEY, live.id);
       if (archive) setGuildSetting(guildId, TICKET_ARCHIVE_KEY, archive.id);
 
-      const now = getTicketCategories(guildId);
-      const lines = [
-        now.live
-          ? `new tickets open in <#${now.live}>`
-          : 'no category for new tickets yet, so they land at the top of the server',
-        now.archive
-          ? `closed ones move to <#${now.archive}>`
-          : 'no archive category yet, so closed tickets stay where they are',
-      ];
-
+      const notes: string[] = [];
       const me = interaction.guild.members.me;
       const missing = missingTicketPerms(interaction.guild);
       const unreachable = [live, archive]
@@ -507,21 +501,17 @@ export const settings: SlashCommand = {
         .map((c) => `<#${c.id}>`);
 
       if (missing.length > 0) {
-        lines.push(
-          `-# i'm missing **${missing.join('** and **')}**, so i can't make ticket channels at all until someone gives me that`,
+        notes.push(
+          `i'm missing **${missing.join('** and **')}**, so i can't make ticket channels at all until someone gives me that`,
         );
       }
       if (unreachable.length > 0) {
-        lines.push(
-          `-# i can't manage channels inside ${unreachable.join(' or ')},, check my permissions there`,
+        notes.push(
+          `i can't manage channels inside ${unreachable.join(' or ')},, check my permissions there`,
         );
       }
 
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('ticket categories updated !')
-        .setDescription(lines.join('\n'));
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(updatedReply(interaction, setting, notes));
       return;
     }
 
@@ -529,15 +519,15 @@ export const settings: SlashCommand = {
       const enabled = interaction.options.getBoolean('enabled', true);
       setLevelingEnabled(guildId, enabled);
 
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('leveling updated !')
-        .setDescription(
-          enabled
-            ? 'leveling is **on** ! members earn xp by chatting now c:'
-            : 'leveling is **off** ! xp is kept safe, nobody earns any for now',
-        );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(
+        enabled
+          ? settingsReply(interaction.guild, 'leveling is on !', [
+              'members earn xp by chatting now c:',
+            ])
+          : settingsReply(interaction.guild, 'leveling is off', [
+              'xp is kept safe, nobody earns any for now',
+            ]),
+      );
       return;
     }
   },
