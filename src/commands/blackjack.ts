@@ -11,10 +11,7 @@ import {
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency, modifyBalance } from '../services/economy/guild.js';
-import {
-  isGamblingEnabled,
-  getGamblingSettings,
-} from '../services/games/store.js';
+import { checkBet } from '../services/games/store.js';
 import {
   handValue,
   isBlackjack,
@@ -252,13 +249,6 @@ export const blackjack: SlashCommand = {
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
 
-    if (!isGamblingEnabled(guildId)) {
-      await interaction.reply({
-        content: 'gambling is turned off in this server :c',
-      });
-      return;
-    }
-
     if (hasGame(guildId, userId)) {
       await interaction.reply({
         content: 'you already have a hand going ! finish it first',
@@ -266,25 +256,16 @@ export const blackjack: SlashCommand = {
       return;
     }
 
-    const settings = getGamblingSettings(guildId);
     const bet = interaction.options.getInteger('bet', true);
+    const rejected = checkBet(guildId, userId, bet);
+    if (rejected) {
+      await interaction.reply({ content: rejected });
+      return;
+    }
+
     const currency = getCurrency(guildId);
     const money = (n: number) =>
       `${currency.emoji} **${n.toLocaleString('en-US')}**`;
-
-    if (bet < settings.minBet) {
-      await interaction.reply({
-        content: `minimum bet is ${money(settings.minBet)} !`,
-      });
-      return;
-    }
-
-    if (settings.maxBet > 0 && bet > settings.maxBet) {
-      await interaction.reply({
-        content: `maximum bet is ${money(settings.maxBet)} !`,
-      });
-      return;
-    }
 
     const deducted = modifyBalance(guildId, userId, -bet, 'blackjack bet');
     if (!deducted.ok) {

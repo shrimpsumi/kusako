@@ -2,10 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency } from '../services/economy/guild.js';
-import {
-  isGamblingEnabled,
-  getGamblingSettings,
-} from '../services/games/store.js';
+import { checkBet } from '../services/games/store.js';
 import {
   BETS,
   OUTSIDE_BETS,
@@ -67,32 +64,16 @@ export const roulette: SlashCommand = {
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
 
-    if (!isGamblingEnabled(guildId)) {
-      await interaction.reply({
-        content: 'gambling is turned off in this server!',
-      });
+    const amount = interaction.options.getInteger('bet', true);
+    const rejected = checkBet(guildId, userId, amount);
+    if (rejected) {
+      await interaction.reply({ content: rejected });
       return;
     }
 
-    const settings = getGamblingSettings(guildId);
-    const amount = interaction.options.getInteger('bet', true);
     const currency = getCurrency(guildId);
     const money = (n: number) =>
       `${currency.emoji} **${n.toLocaleString('en-US')}**`;
-
-    if (amount < settings.minBet) {
-      await interaction.reply({
-        content: `minimum bet is ${money(settings.minBet)} !`,
-      });
-      return;
-    }
-
-    if (settings.maxBet > 0 && amount > settings.maxBet) {
-      await interaction.reply({
-        content: `maximum bet is ${money(settings.maxBet)} !`,
-      });
-      return;
-    }
 
     const bet = parseBet(interaction.options.getString('on', true));
 

@@ -1,5 +1,6 @@
 import { getGuildSetting, setGuildSetting } from '../guildSettings.js';
 import { getCooldownRemaining, setCooldown, gameScope } from '../cooldowns.js';
+import { getBalance, getCurrency } from '../economy/guild.js';
 
 export function getGameCooldownRemaining(
   guildId: string,
@@ -74,6 +75,31 @@ export function isGamblingEnabled(guildId: string): boolean {
 
 export function setGamblingEnabled(guildId: string, enabled: boolean): void {
   setGameEnabled(guildId, 'gambling', enabled);
+}
+
+export function checkBet(
+  guildId: string,
+  userId: string,
+  bet: number,
+): string | null {
+  if (!isGamblingEnabled(guildId)) {
+    return 'gambling is turned off in this server :c';
+  }
+
+  const { minBet, maxBet } = getGamblingSettings(guildId);
+  const currency = getCurrency(guildId);
+  const money = (n: number) =>
+    `${currency.emoji} **${n.toLocaleString('en-US')}**`;
+
+  if (bet < minBet) return `minimum bet is ${money(minBet)} !`;
+  if (maxBet > 0 && bet > maxBet) return `maximum bet is ${money(maxBet)} !`;
+
+  const balance = getBalance(guildId, userId);
+  if (balance < bet) {
+    return `you only have ${money(balance)},,, can't bet that much !`;
+  }
+
+  return null;
 }
 
 export interface PatSettings {
