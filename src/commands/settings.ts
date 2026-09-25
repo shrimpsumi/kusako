@@ -3,9 +3,24 @@ import {
   PermissionFlagsBits,
   ChannelType,
   MessageFlags,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  type ButtonInteraction,
+  type Guild,
+  type StringSelectMenuInteraction,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
+import {
+  groups,
+  findGroup,
+  findSetting,
+  type SettingEntry,
+  type SettingGroup,
+} from '../services/settings/registry.js';
+import { commandMention } from '../utils/commandMentions.js';
 import { setGuildSetting } from '../services/guildSettings.js';
 import {
   getTicketCategories,
@@ -35,13 +50,153 @@ import {
 } from '../services/timezone.js';
 import { serverEmbed, NO_DMS } from '../utils/style.js';
 
+const ARROW = '<:arrowright:1545483910022959194>';
+
+function groupSelect(selected: string | null) {
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('settings:group')
+      .setPlaceholder('pick a group')
+      .addOptions(
+        groups().map((group) => ({
+          label: group.label,
+          value: group.id,
+          default: group.id === selected,
+        })),
+      ),
+  );
+}
+
+function settingSelect(group: SettingGroup) {
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('settings:setting')
+      .setPlaceholder('pick a setting')
+      .addOptions(
+        group.settings.map((setting) => ({
+          label: setting.label,
+          value: setting.id,
+        })),
+      ),
+  );
+}
+
+function homeRow() {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('settings:home')
+      .setLabel('← all groups')
+      .setStyle(ButtonStyle.Secondary),
+  );
+}
+
+function overviewPayload(guild: Guild) {
+  const blocks = groups().map(
+    (group) => `### ***${group.label}***\n${group.description}`,
+  );
+
+  const embed = serverEmbed(guild)
+    .setTitle('settings !')
+    .setDescription(
+      [...blocks, '', `${ARROW} pick a group below to see its settings`].join(
+        '\n',
+      ),
+    );
+
+  return { embeds: [embed], components: [groupSelect(null)] };
+}
+
+function groupPayload(guild: Guild, groupId: string) {
+  const group = findGroup(groupId);
+  if (!group) return overviewPayload(guild);
+
+  const embed = serverEmbed(guild)
+    .setTitle(`${group.label} !`)
+    .setDescription(group.description)
+    .addFields(
+      group.settings.map((setting) => ({
+        name: setting.label,
+        value: setting.knobs
+          .map((knob) => `${knob.option} · **${knob.value(guild.id)}**`)
+          .join('\n'),
+        inline: true,
+      })),
+    );
+
+  return {
+    embeds: [embed],
+    components: [groupSelect(group.id), settingSelect(group), homeRow()],
+  };
+}
+
+function changeLine(setting: SettingEntry): string {
+  const commands = [...new Set(setting.knobs.map((knob) => knob.command))];
+  if (commands.length === 1) {
+    return `change it with ${commandMention(commands[0]!)} :3`;
+  }
+
+  const parts = commands.map((command) => {
+    const options = setting.knobs
+      .filter((knob) => knob.command === command)
+      .map((knob) => knob.option);
+    return `the ${options.join(' and ')} with ${commandMention(command)}`;
+  });
+  return `change ${parts.join(' and ')}`;
+}
+
+function settingEmbed(guild: Guild, setting: SettingEntry) {
+  return serverEmbed(guild).setDescription(`${ARROW} ${changeLine(setting)}`);
+}
+
+export async function handleSettingsComponents(
+  interaction: StringSelectMenuInteraction | ButtonInteraction,
+): Promise<void> {
+  if (!interaction.inCachedGuild()) return;
+
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
+    await interaction.reply({
+      content: 'you need **manage server** to change settings !',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const { guild } = interaction;
+
+  if (interaction.isButton()) {
+    await interaction.update(overviewPayload(guild));
+    return;
+  }
+
+  const choice = interaction.values[0] ?? '';
+
+  if (interaction.customId === 'settings:group') {
+    await interaction.update(groupPayload(guild, choice));
+    return;
+  }
+
+  const setting = findSetting(choice);
+  if (!setting) {
+    await interaction.reply({
+      content: "i don't know that setting,, run /settings view again !",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  await interaction.reply({
+    embeds: [settingEmbed(guild, setting)],
+    flags: MessageFlags.Ephemeral,
+  });
+}
+
 export const settings: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('settings')
     .setDescription('configure sako for this server')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
-      sub.setName('view').setDescription('coming back soon !'),
+      sub.setName('view').setDescription("see and change sako's settings"),
     )
     .addSubcommandGroup((group) =>
       group
@@ -184,11 +339,7 @@ export const settings: SlashCommand = {
     const sub = interaction.options.getSubcommand();
 
     if (group === null && sub === 'view') {
-      const embed = serverEmbed(interaction.guild).setDescription(
-        "working on it !! this one is getting rebuilt, so it's away for now",
-      );
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply(overviewPayload(interaction.guild));
       return;
     }
 
