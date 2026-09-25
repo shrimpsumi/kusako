@@ -18,7 +18,6 @@ export type FireEvent = (guild: Guild, member: EventMember) => Promise<unknown>;
 export interface EventDefinition {
   id: string;
   label: string;
-  blurb: string;
   register(client: SakoClient, fire: FireEvent): void;
 }
 
@@ -26,7 +25,6 @@ export const EVENTS = [
   {
     id: 'join',
     label: 'join',
-    blurb: 'what sako says when someone joins !',
     register(client: SakoClient, fire: FireEvent) {
       client.on(Events.GuildMemberAdd, async (member) => {
         await fire(member.guild, member);
@@ -36,7 +34,6 @@ export const EVENTS = [
   {
     id: 'leave',
     label: 'leave',
-    blurb: 'what sako says when someone leaves !',
     register(client: SakoClient, fire: FireEvent) {
       client.on(Events.GuildMemberRemove, async (member) => {
         await fire(member.guild, member);
@@ -46,7 +43,6 @@ export const EVENTS = [
   {
     id: 'boost',
     label: 'boost',
-    blurb: 'what sako says when someone boosts !',
     register(client: SakoClient, fire: FireEvent) {
       client.on(Events.GuildMemberUpdate, async (_oldMember, newMember) => {
         const premiumSince = newMember.premiumSinceTimestamp;
@@ -70,7 +66,6 @@ export const EVENTS = [
   {
     id: 'birthday',
     label: 'birthday',
-    blurb: "what sako says on someone's birthday !",
     register(client: SakoClient, fire: FireEvent) {
       client.once(Events.ClientReady, (ready) => {
         startBirthdaySweep(ready, fire);
