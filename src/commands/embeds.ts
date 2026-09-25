@@ -461,11 +461,9 @@ export async function handleEmbedComponents(
     if (!interaction.isButton()) return;
 
     if (sectionId === 'keep') {
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('phew !')
-        .setDescription(
-          `${inlineCode(nameKey)} is staying right where it is :3`,
-        );
+      const embed = serverEmbed(interaction.guild).setDescription(
+        `## phew !\n${inlineCode(nameKey)} is staying right where it is :3`,
+      );
 
       await interaction.update({ embeds: [embed], components: [] });
       return;
@@ -475,14 +473,14 @@ export async function handleEmbedComponents(
     const embed = serverEmbed(interaction.guild);
 
     if (!existing) {
-      embed
-        .setTitle('already gone !')
-        .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
+      embed.setDescription(
+        `## already gone !\n${inlineCode(nameKey)} isn't here anymore...`,
+      );
     } else {
       deleteEmbed(interaction.guildId, nameKey);
-      embed
-        .setTitle('embed deleted !')
-        .setDescription(`deleted the ${inlineCode(existing.name)} embed !`);
+      embed.setDescription(
+        `## deleted the ${inlineCode(existing.name)} embed !`,
+      );
     }
 
     await interaction.update({ embeds: [embed], components: [] });
@@ -770,19 +768,17 @@ export const embeds: SlashCommand = {
       const usage = usageIndex(guildId).get(record.nameKey);
       const stakes =
         usage && usage.users.length > 0
-          ? `-# ✧ ${usageLine(usage)},, those will show the tag as plain text instead`
-          : '-# ✧ nothing references it right now';
+          ? `-# ${usageLine(usage)},, those will show the tag as plain text instead`
+          : '-# nothing uses it right now';
 
-      const embed = serverEmbed(interaction.guild)
-        .setTitle('delete this embed ?')
-        .setDescription(
-          [
-            `ᯓ➤ **${record.name}**`,
-            stakes,
-            '',
-            "there's no undo,, you'd have to build it again from scratch :c",
-          ].join('\n'),
-        );
+      const embed = serverEmbed(interaction.guild).setDescription(
+        [
+          `## delete the ${inlineCode(record.name)} embed?`,
+          stakes,
+          '',
+          "there's no undo,, you'd have to build it again from scratch :c",
+        ].join('\n'),
+      );
 
       await interaction.reply({
         embeds: [embed],

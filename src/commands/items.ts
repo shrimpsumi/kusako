@@ -100,21 +100,19 @@ function confirmEmbed(guild: Guild, item: Item) {
 
   const stakes = [
     circulation > 0
-      ? `-# ✧ ${circulation.toLocaleString('en-US')} of them out there in inventories`
-      : '-# ✧ nobody is holding any right now',
+      ? `-# ${circulation.toLocaleString('en-US')} of them are out there in inventories`
+      : '-# nobody is holding any right now',
     listed ? '-# it gets pulled from the shop too' : null,
   ].filter((line) => line !== null);
 
-  return serverEmbed(guild)
-    .setTitle('delete this item ?')
-    .setDescription(
-      [
-        `${item.emoji ?? '📦'} **${item.name}**`,
-        ...stakes,
-        '',
-        "this wipes it from every inventory, for good ! there's no undo,, and i can't give it back after :c",
-      ].join('\n'),
-    );
+  return serverEmbed(guild).setDescription(
+    [
+      `## delete the ${item.emoji ?? '📦'} ${item.name} item?`,
+      ...stakes,
+      '',
+      "this wipes it from every inventory for good. there's no undo,, and i can't give it back after :c",
+    ].join('\n'),
+  );
 }
 
 function confirmRow(nameKey: string): ActionRowBuilder<ButtonBuilder> {
@@ -149,9 +147,9 @@ export async function handleItemComponents(
   }
 
   if (action === 'keep') {
-    const embed = serverEmbed(interaction.guild)
-      .setTitle('phew !')
-      .setDescription(`${inlineCode(nameKey)} is staying right where it is :3`);
+    const embed = serverEmbed(interaction.guild).setDescription(
+      `## phew !\n${inlineCode(nameKey)} is staying right where it is :3`,
+    );
 
     await interaction.update({ embeds: [embed], components: [] });
     return;
@@ -159,9 +157,9 @@ export async function handleItemComponents(
 
   const item = getItem(interaction.guildId, nameKey);
   if (!item) {
-    const embed = serverEmbed(interaction.guild)
-      .setTitle('already gone !')
-      .setDescription(`${inlineCode(nameKey)} isn't here anymore...`);
+    const embed = serverEmbed(interaction.guild).setDescription(
+      `## already gone !\n${inlineCode(nameKey)} isn't here anymore...`,
+    );
 
     await interaction.update({ embeds: [embed], components: [] });
     return;
@@ -169,11 +167,9 @@ export async function handleItemComponents(
 
   deleteItem(interaction.guildId, nameKey);
 
-  const embed = serverEmbed(interaction.guild)
-    .setTitle('item deleted !')
-    .setDescription(
-      `deleted ${item.emoji ?? '📦'} **${item.name}** and removed it from everyone's inventories !`,
-    );
+  const embed = serverEmbed(interaction.guild).setDescription(
+    `## deleted the ${item.emoji ?? '📦'} ${item.name} item !\n-# it's gone from everyone's inventories`,
+  );
 
   await interaction.update({ embeds: [embed], components: [] });
 }

@@ -82,9 +82,9 @@ export async function handleButtonResponderComponents(
   if (action === 'keep') {
     await interaction.update({
       embeds: [
-        serverEmbed(interaction.guild)
-          .setTitle('phew !')
-          .setDescription(`${inlineCode(nameKey)} is staying put :3`),
+        serverEmbed(interaction.guild).setDescription(
+          `## phew !\n${inlineCode(nameKey)} is staying put :3`,
+        ),
       ],
       components: [],
     });
@@ -496,7 +496,7 @@ export const buttonresponders: SlashCommand = {
         embeds: [
           serverEmbed(interaction.guild).setDescription(
             [
-              `## delete the ${inlineCode(responder.name)} button ?`,
+              `## delete the ${inlineCode(responder.name)} button?`,
               codeBlock(responder.response),
               `-# any message with this button just stops doing anything on click. there's no undo,,,, copy the reply above if you might want it back !`,
             ].join('\n'),
