@@ -131,18 +131,17 @@ function pasteHint(guild: Guild, menu: RoleMenu): string {
 }
 
 function menuEmbed(guild: Guild, header: string, menu: RoleMenu) {
-  const missing: string[] = [];
-  const blocks = menu.roles.map((entry) => {
+  let missing = 0;
+  const roles = menu.roles.map((entry) => {
     const role = guild.roles.cache.get(entry.roleId);
     if (!role) {
-      missing.push(entry.roleId);
-      return `ᯓ➤ ~~${entry.roleId}~~\n-# ✧ this role is gone`;
+      missing += 1;
+      return `~~${entry.roleId}~~ · this role is gone`;
     }
 
-    const bits = [entry.label ?? role.name, entry.emoji ?? null].filter(
-      (bit) => bit !== null,
-    );
-    return `ᯓ➤ ${role.toString()}\n-# ✧ shows as ${bits.join(' ')}`;
+    const label = entry.label && entry.label !== role.name ? entry.label : null;
+    const look = [label, entry.emoji].filter((bit) => bit).join(' ');
+    return look ? `${role.toString()} · ${look}` : role.toString();
   });
 
   const meta = [
@@ -151,28 +150,38 @@ function menuEmbed(guild: Guild, header: string, menu: RoleMenu) {
     menu.style === 'buttons' ? (menu.color ?? 'gray') : null,
   ].filter((bit) => bit !== null);
 
+  const dropdown = menu.style === 'dropdown';
+  const notes = [
+    dropdown && menu.placeholder
+      ? `the dropdown says "${menu.placeholder}"`
+      : null,
+    dropdown && !menu.showClear ? 'no clear roles option on this one' : null,
+    missing === 1 ? '1 of these roles is gone, so it gets skipped' : null,
+    missing > 1
+      ? `${missing} of these roles are gone, so they get skipped`
+      : null,
+    roles.length > 0
+      ? `takes up ${menuRowCost(menu)} of the 5 rows a message can have`
+      : null,
+  ].filter((note) => note !== null);
+
   const lines = [
-    `꒰ ${menu.name} ꒱ *${menu.roles.length} role${menu.roles.length === 1 ? '' : 's'} ⊹ ${meta.join(' ━ ')}*`,
+    `## ${header}`,
+    meta.join(' · '),
     '',
-    blocks.length > 0 ? blocks.join('\n\n') : 'no roles yet !',
-    '',
+    roles.length > 0 ? roles.join('\n\n') : 'no roles yet...',
   ];
 
-  if (menu.placeholder) lines.push(`-# ✧ says "${menu.placeholder}"`);
-  if (menu.style === 'dropdown' && !menu.showClear) {
-    lines.push('-# ✧ no clear roles pick on this one');
+  if (notes.length > 0) {
+    lines.push('', ...notes.map((note) => `> ${note}`));
   }
-  if (missing.length > 0) {
-    lines.push(
-      `-# ✧ **${missing.length}** of these no longer exist and are skipped when it renders`,
-    );
-  }
+
   lines.push(
-    `-# ✧ takes up **${menuRowCost(menu)}** of the 5 rows a message can have`,
-    `⁀જ➣ drop it anywhere with ${inlineCode(`{rolemenu:${menu.name}}`)}`,
+    '',
+    `<:arrowright:1545483910022959194> drop it anywhere with ${inlineCode(`{rolemenu:${menu.name}}`)}`,
   );
 
-  return serverEmbed(guild).setTitle(header).setDescription(lines.join('\n'));
+  return serverEmbed(guild).setDescription(lines.join('\n'));
 }
 
 function noMenuEmbed(guild: Guild, name: string) {
