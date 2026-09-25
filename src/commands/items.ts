@@ -54,8 +54,8 @@ function itemReplyIssues(reply: string): string | null {
   return templateIssues(reply);
 }
 
-function rolesOnUse(useReply: string | null): string {
-  if (!useReply) return 'none';
+function rolesOnUse(useReply: string | null): string | null {
+  if (!useReply) return null;
   const roles = parse(useReply)
     .filter(
       (node): node is PlaceholderNode =>
@@ -64,26 +64,28 @@ function rolesOnUse(useReply: string | null): string {
     .map((node) => (node.args[0] ?? '').trim())
     .filter((arg) => arg !== '')
     .map((arg) => (/^\d+$/.test(arg) ? `<@&${arg}>` : arg));
-  return roles.length ? roles.join(', ') : 'none';
+  return roles.length ? roles.join(', ') : null;
 }
 
-function itemDetailEmbed(guild: Guild, title: string, item: Item) {
+function itemCard(guild: Guild, item: Item, label: string) {
+  const all = listItems(guild.id);
+  const position = all.findIndex((i) => i.nameKey === item.nameKey) + 1;
+
   return serverEmbed(guild)
-    .setTitle(title)
-    .setDescription(`${item.emoji ?? '📦'} **${item.name}**`)
+    .setAuthor({
+      name: `${guild.name} ⋆ ${label}`,
+      iconURL: guild.iconURL({ size: 256 }) ?? undefined,
+    })
+    .setTitle(`${item.emoji ?? '📦'} ${item.name}`)
+    .setDescription(
+      item.description
+        ? `> *${item.description}*`
+        : '> *no description,,, scary*',
+    )
     .addFields(
       {
-        name: 'description',
-        value: item.description ?? 'none',
-      },
-      {
         name: 'reply',
-        value: item.useReply ? 'yes' : 'none',
-        inline: true,
-      },
-      {
-        name: 'role on use',
-        value: rolesOnUse(item.useReply),
+        value: item.useReply ? 'yes' : 'no',
         inline: true,
       },
       {
@@ -91,7 +93,16 @@ function itemDetailEmbed(guild: Guild, title: string, item: Item) {
         value: item.giftable ? 'yes' : 'no',
         inline: true,
       },
-    );
+      {
+        name: 'role on use',
+        value: rolesOnUse(item.useReply) ?? 'none',
+        inline: true,
+      },
+    )
+    .setFooter({
+      text: `item ${position} of ${all.length}`,
+    })
+    .setTimestamp(item.createdAt);
 }
 
 function confirmEmbed(guild: Guild, item: Item) {
@@ -438,7 +449,7 @@ export const items: SlashCommand = {
       }
 
       const item = getItem(guildId, name)!;
-      const embed = itemDetailEmbed(interaction.guild, 'item created !', item);
+      const embed = itemCard(interaction.guild, item, 'item made !');
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -499,11 +510,7 @@ export const items: SlashCommand = {
       });
 
       const updated = getItem(guildId, name)!;
-      const embed = itemDetailEmbed(
-        interaction.guild,
-        'item updated !',
-        updated,
-      );
+      const embed = itemCard(interaction.guild, updated, 'item updated !');
 
       await interaction.reply({ embeds: [embed] });
       return;
@@ -545,43 +552,9 @@ export const items: SlashCommand = {
         return;
       }
 
-      const all = listItems(guildId);
-      const position = all.findIndex((i) => i.nameKey === item.nameKey) + 1;
-
-      const embed = serverEmbed(interaction.guild)
-        .setAuthor({
-          name: `${interaction.guild.name} ⋆ item details`,
-          iconURL: interaction.guild.iconURL({ size: 256 }) ?? undefined,
-        })
-        .setTitle(`${item.emoji ?? '📦'} ${item.name}`)
-        .setDescription(
-          item.description
-            ? `> *${item.description}*`
-            : '> *no description,,, scary*',
-        )
-        .addFields(
-          {
-            name: 'reply',
-            value: item.useReply ? 'yes' : 'no',
-            inline: true,
-          },
-          {
-            name: 'giftable',
-            value: item.giftable ? 'yes' : 'no',
-            inline: true,
-          },
-          {
-            name: 'role on use',
-            value: rolesOnUse(item.useReply),
-            inline: true,
-          },
-        )
-        .setFooter({
-          text: `item ${position} of ${all.length}`,
-        })
-        .setTimestamp(item.createdAt);
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({
+        embeds: [itemCard(interaction.guild, item, 'item details')],
+      });
       return;
     }
 
