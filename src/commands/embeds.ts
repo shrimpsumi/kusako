@@ -34,10 +34,6 @@ import {
   type EmbedRecord,
 } from '../services/embeds/store.js';
 import { colors, serverEmbed, NO_DMS } from '../utils/style.js';
-import { listAllTemplates } from '../services/templates.js';
-import { listItems } from '../services/items/store.js';
-import { parse } from '../dsl/parser.js';
-import type { PlaceholderNode } from '../dsl/ast.js';
 import { paginate, applyPage } from '../utils/pagination.js';
 import { registerPage } from '../services/pageRegistry.js';
 
@@ -234,46 +230,6 @@ function previewOf(data: EmbedData): { embed: APIEmbed; hidden: string[] } {
   return { embed, hidden };
 }
 
-interface EmbedUsage {
-  users: string[];
-  dynamic: number;
-}
-
-function usageIndex(guildId: string): Map<string, EmbedUsage> {
-  const index = new Map<string, EmbedUsage>();
-  let dynamic = 0;
-
-  for (const source of listAllTemplates(guildId)) {
-    const names = parse(source.response)
-      .filter(
-        (node): node is PlaceholderNode =>
-          node.kind === 'placeholder' && node.name === 'embed',
-      )
-      .map((node) => (node.args[0] ?? '').trim())
-      .filter((arg) => arg !== '');
-
-    for (const name of names) {
-      if (name.startsWith('#')) continue;
-      if (name.includes('[')) {
-        dynamic += 1;
-        continue;
-      }
-
-      const nameKey = name.toLowerCase();
-      const entry = index.get(nameKey) ?? { users: [], dynamic: 0 };
-      if (!entry.users.includes(source.label)) entry.users.push(source.label);
-      index.set(nameKey, entry);
-    }
-  }
-
-  if (dynamic > 0) {
-    for (const entry of index.values()) entry.dynamic = dynamic;
-    if (index.size === 0) index.set('', { users: [], dynamic });
-  }
-
-  return index;
-}
-
 function structureOf(data: EmbedData): string[] {
   const parts: string[] = [];
   if (data.title) parts.push('title');
@@ -289,15 +245,6 @@ function structureOf(data: EmbedData): string[] {
   }
   if (data.color !== undefined) parts.push('custom color');
   return parts;
-}
-
-function usageLine(usage: EmbedUsage | undefined): string {
-  if (!usage || usage.users.length === 0) return 'not used anywhere yet';
-
-  const shown = usage.users.slice(0, 3).join(', ');
-  const extra =
-    usage.users.length > 3 ? ` +${usage.users.length - 3} more` : '';
-  return `used by ${shown}${extra}`;
 }
 
 function embedsPage(guild: Guild, _userId: string, page: number) {
@@ -765,16 +712,10 @@ export const embeds: SlashCommand = {
         return;
       }
 
-      const usage = usageIndex(guildId).get(record.nameKey);
-      const stakes =
-        usage && usage.users.length > 0
-          ? `-# ${usageLine(usage)},, those will show the tag as plain text instead`
-          : '-# nothing uses it right now';
-
       const embed = serverEmbed(interaction.guild).setDescription(
         [
           `## delete the ${inlineCode(record.name)} embed?`,
-          stakes,
+          '-# any reply that uses it will show the tag as plain text instead',
           '',
           "there's no undo,, you'd have to build it again from scratch :c",
         ].join('\n'),
