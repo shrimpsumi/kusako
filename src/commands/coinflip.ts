@@ -2,23 +2,22 @@ import { SlashCommandBuilder } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
 import { getCurrency } from '../services/economy/guild.js';
-import {
-  isGamblingEnabled,
-  getGamblingSettings,
-} from '../services/games/store.js';
+import { checkBet } from '../services/games/store.js';
 import { settleGame } from '../services/games/stats.js';
 import { userEmbed, NO_DMS } from '../utils/style.js';
 
+const SIDES = ['heads', 'tails'] as const;
+
 const WIN_LINES = [
-  'heads!! you win {{pay}} !',
-  'HEADS!! good call, {{pay}} is yours !',
-  'heads! you got paid {{pay}}',
+  '{{side}}!! you win {{pay}} !',
+  '{{SIDE}}!! good call, {{pay}} is yours !',
+  '{{side}}! you got paid {{pay}}',
 ];
 
 const LOSE_LINES = [
-  'tails... you lost {{pay}} :c',
-  'tails !! there goes {{pay}}...',
-  'tails... bye bye {{pay}},,',
+  '{{side}}... you lost {{pay}} :c',
+  '{{side}} !! there goes {{pay}}...',
+  '{{side}}... bye bye {{pay}},,',
 ];
 
 function pick(lines: string[]): string {
@@ -35,6 +34,13 @@ export const coinflip: SlashCommand = {
         .setDescription('how much to wager')
         .setMinValue(1)
         .setRequired(true),
+    )
+    .addStringOption((o) =>
+      o
+        .setName('side')
+        .setDescription('heads or tails')
+        .setRequired(true)
+        .addChoices(...SIDES.map((side) => ({ name: side, value: side }))),
     ) as SlashCommandBuilder,
 
   async execute(interaction) {
@@ -46,34 +52,20 @@ export const coinflip: SlashCommand = {
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
 
-    if (!isGamblingEnabled(guildId)) {
-      await interaction.reply({
-        content: 'gambling is turned off in this server :c',
-      });
+    const bet = interaction.options.getInteger('bet', true);
+    const rejected = checkBet(guildId, userId, bet);
+    if (rejected) {
+      await interaction.reply({ content: rejected });
       return;
     }
 
-    const settings = getGamblingSettings(guildId);
-    const bet = interaction.options.getInteger('bet', true);
     const currency = getCurrency(guildId);
     const money = (n: number) =>
       `${currency.emoji} **${n.toLocaleString('en-US')}**`;
 
-    if (bet < settings.minBet) {
-      await interaction.reply({
-        content: `minimum bet is ${money(settings.minBet)} !`,
-      });
-      return;
-    }
-
-    if (settings.maxBet > 0 && bet > settings.maxBet) {
-      await interaction.reply({
-        content: `maximum bet is ${money(settings.maxBet)} !`,
-      });
-      return;
-    }
-
-    const won = Math.random() < 0.5;
+    const call = interaction.options.getString('side', true);
+    const landed = pick([...SIDES]);
+    const won = landed === call;
     const delta = won ? bet : -bet;
     const result = settleGame(
       guildId,
@@ -91,10 +83,10 @@ export const coinflip: SlashCommand = {
       return;
     }
 
-    const line = pick(won ? WIN_LINES : LOSE_LINES).replaceAll(
-      '{{pay}}',
-      money(bet),
-    );
+    const line = pick(won ? WIN_LINES : LOSE_LINES)
+      .replaceAll('{{pay}}', money(bet))
+      .replaceAll('{{side}}', landed)
+      .replaceAll('{{SIDE}}', landed.toUpperCase());
 
     const embed = userEmbed(interaction.user)
       .setColor(won ? 0xb8e6c4 : 0xf0b3b3)
