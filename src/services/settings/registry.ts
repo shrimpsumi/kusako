@@ -12,12 +12,7 @@ import { getEventReply } from '../guildEvents/store.js';
 import { EVENTS } from '../guildEvents/registry.js';
 import { getTicketCategories } from '../tickets/store.js';
 import { formatDuration } from '../../dsl/args.js';
-import {
-  getGuildTimezone,
-  hasGuildTimezone,
-  zonedParts,
-  formatWallTime,
-} from '../timezone.js';
+import { getGuildTimezone, hasGuildTimezone } from '../timezone.js';
 
 export interface SettingKnob {
   option: string;
@@ -30,7 +25,6 @@ export interface SettingEntry {
   group: string;
   label: string;
   knobs: SettingKnob[];
-  render(guildId: string): string;
 }
 
 export interface SettingGroup {
@@ -73,15 +67,6 @@ export const GROUPS: Omit<SettingGroup, 'settings'>[] = [
 const n = (value: number) => value.toLocaleString('en-US');
 const onOff = (enabled: boolean) => (enabled ? 'on' : 'off');
 
-function money(guildId: string, value: number): string {
-  return `${getCurrency(guildId).emoji} ${n(value)}`;
-}
-
-function localTime(zone: string): string {
-  const now = zonedParts(Date.now(), zone);
-  return formatWallTime(now.hour * 60 + now.minute);
-}
-
 export const SETTINGS: SettingEntry[] = [
   {
     id: 'currency',
@@ -99,15 +84,11 @@ export const SETTINGS: SettingEntry[] = [
         value: (guildId) => getCurrency(guildId).emoji,
       },
     ],
-    render(guildId) {
-      const currency = getCurrency(guildId);
-      return `${currency.emoji} ${currency.name}`;
-    },
   },
   {
     id: 'pat',
     group: 'economy',
-    label: 'head pats',
+    label: '/pat',
     knobs: [
       {
         option: 'min',
@@ -131,13 +112,6 @@ export const SETTINGS: SettingEntry[] = [
         value: (guildId) => onOff(isGameEnabled(guildId, 'pat')),
       },
     ],
-    render(guildId) {
-      if (!isGameEnabled(guildId, 'pat')) return 'off';
-
-      const pat = getPatSettings(guildId);
-      const currency = getCurrency(guildId);
-      return `on · ${currency.emoji} ${n(pat.minReward)}-${n(pat.maxReward)} per pat · every ${formatDuration(pat.cooldownSeconds)}`;
-    },
   },
   {
     id: 'gambling',
@@ -163,13 +137,6 @@ export const SETTINGS: SettingEntry[] = [
         value: (guildId) => onOff(isGamblingEnabled(guildId)),
       },
     ],
-    render(guildId) {
-      if (!isGamblingEnabled(guildId)) return 'off';
-
-      const { minBet, maxBet } = getGamblingSettings(guildId);
-      const max = maxBet === 0 ? 'no max' : `max ${money(guildId, maxBet)}`;
-      return `on · bets from ${money(guildId, minBet)} · ${max}`;
-    },
   },
   {
     id: 'levels',
@@ -182,9 +149,6 @@ export const SETTINGS: SettingEntry[] = [
         value: (guildId) => onOff(isLevelingEnabled(guildId)),
       },
     ],
-    render(guildId) {
-      return onOff(isLevelingEnabled(guildId));
-    },
   },
   ...EVENTS.map(
     (event): SettingEntry => ({
@@ -207,21 +171,12 @@ export const SETTINGS: SettingEntry[] = [
           },
         },
       ],
-      render(guildId) {
-        const reply = getEventReply(guildId, event.id);
-        return [
-          reply?.response ? 'reply set' : 'no reply yet',
-          reply?.channelId
-            ? `goes to ${channelMention(reply.channelId)}`
-            : 'no channel',
-        ].join(' · ');
-      },
     }),
   ),
   {
     id: 'tickets',
     group: 'tickets',
-    label: 'categories',
+    label: 'ticket categories',
     knobs: [
       {
         option: 'category',
@@ -240,13 +195,6 @@ export const SETTINGS: SettingEntry[] = [
         },
       },
     ],
-    render(guildId) {
-      const { live, archive } = getTicketCategories(guildId);
-      return [
-        live ? `open in ${channelMention(live)}` : 'no category yet',
-        archive ? `archive in ${channelMention(archive)}` : 'no archive yet',
-      ].join(' · ');
-    },
   },
   {
     id: 'timezone',
@@ -256,19 +204,10 @@ export const SETTINGS: SettingEntry[] = [
       {
         option: 'zone',
         command: '/settings set timezone',
-        value: (guildId) => {
-          if (!hasGuildTimezone(guildId)) return 'not set';
-          const zone = getGuildTimezone(guildId);
-          return `${zone} (it's ${localTime(zone)} there)`;
-        },
+        value: (guildId) =>
+          hasGuildTimezone(guildId) ? getGuildTimezone(guildId) : 'not set',
       },
     ],
-    render(guildId) {
-      if (!hasGuildTimezone(guildId)) return 'not set yet';
-
-      const zone = getGuildTimezone(guildId);
-      return `${zone} · it's ${localTime(zone)} there`;
-    },
   },
 ];
 
