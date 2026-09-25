@@ -6,45 +6,27 @@ import {
   shouldDealerHit,
   type Card,
 } from './cards.js';
+import { createHands, type Hand } from './hands.js';
 import type { GameResult } from './stats.js';
 
-export interface BlackjackGame {
-  guildId: string;
-  userId: string;
+export interface BlackjackGame extends Hand {
   bet: number;
   deck: Card[];
   player: Card[];
   dealer: Card[];
   doubled: boolean;
-  onTimeout: (game: BlackjackGame) => void;
-  timeout?: ReturnType<typeof setTimeout>;
 }
 
 export type Outcome = 'blackjack' | 'win' | 'lose' | 'push' | 'bust';
 
-const TIMEOUT_MS = 60_000;
-
-const games = new Map<string, BlackjackGame>();
-
-function key(guildId: string, userId: string): string {
-  return `${guildId}:${userId}`;
-}
+const games = createHands<BlackjackGame>();
 
 export function getGame(guildId: string, userId: string): BlackjackGame | null {
-  return games.get(key(guildId, userId)) ?? null;
+  return games.get(guildId, userId);
 }
 
 export function hasGame(guildId: string, userId: string): boolean {
-  return games.has(key(guildId, userId));
-}
-
-function clearGame(guildId: string, userId: string): void {
-  const k = key(guildId, userId);
-  const game = games.get(k);
-  if (game) {
-    clearTimeout(game.timeout);
-    games.delete(k);
-  }
+  return games.has(guildId, userId);
 }
 
 export function startGame(
@@ -53,8 +35,6 @@ export function startGame(
   bet: number,
   onTimeout: (game: BlackjackGame) => void,
 ): BlackjackGame {
-  clearGame(guildId, userId);
-
   const deck = createDeck();
   const player = [deck.pop()!, deck.pop()!];
   const dealer = [deck.pop()!, deck.pop()!];
@@ -70,15 +50,14 @@ export function startGame(
     onTimeout,
   };
 
-  games.set(key(guildId, userId), game);
-  armTimeout(game);
+  games.add(game);
   return game;
 }
 
 export function hit(game: BlackjackGame): Card {
   const card = game.deck.pop()!;
   game.player.push(card);
-  armTimeout(game);
+  games.arm(game);
   return card;
 }
 
@@ -134,16 +113,5 @@ export function resultOf(outcome: Outcome): GameResult {
 }
 
 export function endGame(guildId: string, userId: string): void {
-  clearGame(guildId, userId);
-}
-
-function armTimeout(game: BlackjackGame): void {
-  clearTimeout(game.timeout);
-  game.timeout = setTimeout(() => {
-    const k = key(game.guildId, game.userId);
-    if (games.get(k) === game) {
-      games.delete(k);
-      game.onTimeout(game);
-    }
-  }, TIMEOUT_MS);
+  games.remove(guildId, userId);
 }
