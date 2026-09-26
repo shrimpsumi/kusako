@@ -6,9 +6,10 @@ import {
 } from '../economy/guild.js';
 
 export const STAT_GAMES = [
-  { id: 'blackjack', pushes: true },
-  { id: 'coinflip', pushes: false },
-  { id: 'roulette', pushes: false },
+  { id: 'blackjack', label: 'blackjack', pushes: true },
+  { id: 'coinflip', label: 'coinflip', pushes: false },
+  { id: 'roulette', label: 'roulette', pushes: false },
+  { id: 'ridethebus', label: 'ride the bus', pushes: false },
 ] as const;
 
 export type StatGame = (typeof STAT_GAMES)[number]['id'];

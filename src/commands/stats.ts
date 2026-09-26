@@ -16,7 +16,7 @@ export const stats: SlashCommand = {
         .setName('game')
         .setDescription('which game')
         .setRequired(true)
-        .addChoices(...STAT_GAMES.map((g) => ({ name: g.id, value: g.id }))),
+        .addChoices(...STAT_GAMES.map((g) => ({ name: g.label, value: g.id }))),
     )
     .addUserOption((o) =>
       o
@@ -47,14 +47,14 @@ export const stats: SlashCommand = {
     const nickname = targetMember?.displayName ?? target.displayName;
 
     const embed = userEmbed(target)
-      .setTitle(`${entry.id} stats !`)
+      .setTitle(`${entry.label} stats !`)
       .setColor(0xffd59e);
 
     const record = getGameStats(interaction.guildId, target.id, entry.id);
 
     if (!record) {
       const who = isSelf ? "you haven't" : `${nickname} hasn't`;
-      embed.setDescription(`${who} played any ${entry.id} yet !`);
+      embed.setDescription(`${who} played any ${entry.label} yet !`);
       await interaction.reply({ embeds: [embed] });
       return;
     }
