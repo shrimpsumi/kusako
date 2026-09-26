@@ -27,6 +27,7 @@ import { coinflip } from './coinflip.js';
 import { blackjack } from './blackjack.js';
 import { stats } from './stats.js';
 import { roulette } from './roulette.js';
+import { ridethebus } from './ridethebus.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -56,4 +57,5 @@ export const commands: SlashCommand[] = [
   blackjack,
   stats,
   roulette,
+  ridethebus,
 ];

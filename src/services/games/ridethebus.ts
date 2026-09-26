@@ -69,6 +69,11 @@ export function isCorrect(prev: Card[], card: Card, pick: Pick): boolean {
   return card.suit === pick;
 }
 
+export function isTie(prev: Card[], card: Card): boolean {
+  if (prev.length !== 1 && prev.length !== 2) return false;
+  return prev.some((p) => rankValue(p) === rankValue(card));
+}
+
 export function getGame(guildId: string, userId: string): BusGame | null {
   return games.get(guildId, userId);
 }
