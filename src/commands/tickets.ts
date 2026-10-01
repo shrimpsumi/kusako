@@ -238,7 +238,7 @@ async function runTypeAdd(
 
   if (!isValidTicketKey(key)) {
     await interaction.reply({
-      content: `${inlineCode(raw)} won't work as a key ! it becomes the channel name, so use lowercase letters, numbers, dashes or underscores, up to ${TICKET_KEY_MAX} characters`,
+      content: `${inlineCode(raw)} won't work as a key. it becomes the channel name, so use lowercase letters, numbers, dashes or underscores, up to ${TICKET_KEY_MAX} characters`,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -258,7 +258,7 @@ async function runTypeAdd(
 
   if (!made) {
     await interaction.reply({
-      content: `there's already a ${inlineCode(key)} ticket type ! edit it with ${commandMention('/tickets edit')}`,
+      content: `there's already a ${inlineCode(key)} ticket type. edit it with ${commandMention('/tickets edit')}`,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -346,7 +346,7 @@ async function runTypeRemove(
   const active = countActiveTickets(guild.id, key);
   if (active > 0) {
     await interaction.reply({
-      content: `${inlineCode(key)} still has **${active}** ticket${active === 1 ? '' : 's'} open ! close them first, or only the people who opened them will be able to`,
+      content: `${inlineCode(key)} still has **${active}** ticket${active === 1 ? '' : 's'} open. close them first, or only the people who opened them will be able to`,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -382,7 +382,7 @@ async function runTypeList(
           .setTitle('ticket types !')
           .setColor(0xd9c679)
           .setDescription(
-            `none yet ! make one with ${commandMention('/tickets add')}, then put its button somewhere with ${commandMention('/tickets panel')}`,
+            `none yet,, make one with ${commandMention('/tickets add')}, then put its button somewhere with ${commandMention('/tickets panel')}`,
           ),
       ],
     });
@@ -498,7 +498,7 @@ async function runPanel(
   if (result.segments.length > 1) {
     await interaction.reply({
       content:
-        "a panel is one message, so {split} and {delay} can't go in it ! take them out and the buttons will all sit together",
+        "a panel is a single message, so {split} and {delay} can't be used. take them out and the buttons will be on one message !",
       flags: MessageFlags.Ephemeral,
     });
     return;

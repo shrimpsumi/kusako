@@ -220,7 +220,7 @@ function previewOf(data: EmbedData): { embed: APIEmbed; hidden: string[] } {
     return {
       embed: {
         description:
-          '( this embed is empty ! use the buttons below to build it c: )',
+          '( this embed is empty,, use the buttons below to build it )',
         color: colors.cream,
       },
       hidden,
@@ -327,7 +327,7 @@ function panelPayload(record: EmbedRecord) {
       : '';
 
   return {
-    content: `editing the ${inlineCode(record.name)} embed ! the preview updates as you go${note}`,
+    content: `editing the ${inlineCode(record.name)} embed. the preview updates as you go${note}`,
     embeds: [embed],
     components: buttonRows(record.nameKey),
   };
@@ -462,7 +462,7 @@ export async function handleEmbedComponents(
       if (color === null) {
         await interaction.reply({
           content:
-            "that doesn't look like a hex color ! try something like #faf0e7",
+            "that doesn't look like a hex color,, try something like #faf0e7",
         });
         return;
       }
@@ -620,7 +620,7 @@ export const embeds: SlashCommand = {
 
       if (!created) {
         await interaction.reply({
-          content: `there's already an embed named ${inlineCode(name)} ! change it with ${inlineCode('/embeds edit')}`,
+          content: `there's already an embed named ${inlineCode(name)}. change it with ${inlineCode('/embeds edit')}`,
         });
         return;
       }
@@ -638,7 +638,7 @@ export const embeds: SlashCommand = {
 
       if (!record) {
         await interaction.reply({
-          content: `there's no embed named ${inlineCode(name)} yet ! make one with ${inlineCode('/embeds add')}`,
+          content: `there's no embed named ${inlineCode(name)} yet,, make one with ${inlineCode('/embeds add')}`,
         });
         return;
       }
@@ -685,7 +685,7 @@ export const embeds: SlashCommand = {
 
       if (!record) {
         await interaction.reply({
-          content: `no embed named ${inlineCode(name)} ! see them all with ${inlineCode('/embeds list')}`,
+          content: `no embed named ${inlineCode(name)},, see them all with ${inlineCode('/embeds list')}`,
         });
         return;
       }
@@ -707,7 +707,7 @@ export const embeds: SlashCommand = {
 
       if (!record) {
         await interaction.reply({
-          content: `no embed named ${inlineCode(name)} ! see them all with ${inlineCode('/embeds list')}`,
+          content: `no embed named ${inlineCode(name)},, see them all with ${inlineCode('/embeds list')}`,
         });
         return;
       }

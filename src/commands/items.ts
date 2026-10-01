@@ -50,7 +50,7 @@ function itemReplyIssues(reply: string): string | null {
     (node) => node.kind === 'placeholder' && node.name === 'cooldown',
   );
   if (hasCooldown) {
-    return "{cooldown} doesn't work in item replies ! the item getting used up is already the limit c:";
+    return "{cooldown} doesn't work in item replies. the item getting used up is already the limit c:";
   }
   return templateIssues(reply);
 }
@@ -257,7 +257,7 @@ export async function respondWithItemNames(
 export const items: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('items')
-    .setDescription("this server's items ! browse and use them")
+    .setDescription("this server's items, browse and use them")
     .addSubcommand((sub) =>
       sub
         .setName('add')
@@ -449,7 +449,7 @@ export const items: SlashCommand = {
       if (!created) {
         await interaction.reply({
           content: name.trim()
-            ? `there's already an item called ${inlineCode(name)} ! change it with ${inlineCode('/items edit')}`
+            ? `there's already an item called ${inlineCode(name)}. change it with ${inlineCode('/items edit')}`
             : "the item name can't be blank !",
         });
         return;
@@ -578,7 +578,7 @@ export const items: SlashCommand = {
 
       if (!item.useReply) {
         await interaction.reply({
-          content: `${item.emoji ?? '📦'} **${item.name}** can't be used ! it's just for holding c:`,
+          content: `${item.emoji ?? '📦'} **${item.name}** can't be used,, it's just for holding`,
         });
         return;
       }

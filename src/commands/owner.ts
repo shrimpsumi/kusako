@@ -210,6 +210,6 @@ async function runGlobal(message: Message, args: string[]): Promise<void> {
 
   await reply(
     message,
-    `done ! <@${userId}> now has ${balanceLine(currency, result.balance)}`,
+    `done, <@${userId}> now has ${balanceLine(currency, result.balance)}`,
   );
 }

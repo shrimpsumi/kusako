@@ -46,7 +46,7 @@ export const pat: SlashCommand = {
     const remaining = getGameCooldownRemaining(guildId, 'pat', userId);
     if (remaining > 0) {
       const embed = userEmbed(interaction.user).setDescription(
-        `STOPPP !! i don't want any right now... come back in **${formatDuration(remaining)}**`,
+        `STOPPP,,, i don't want any right now... come back in **${formatDuration(remaining)}**`,
       );
       await interaction.reply({ embeds: [embed] });
       return;
