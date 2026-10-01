@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/stinkmage/assets@main/kusakobaner-noshrimp-noshadow.png" width="680" alt="kusako" />
+  <img src="https://cdn.jsdelivr.net/gh/shrimpsumi/assets@main/kusakobaner-noshrimp-noshadow.png" width="680" alt="kusako" />
 </p>
 
 <p align="center">a discord bot for economy, levels, items, and custom autoresponder replies.</p>
@@ -8,7 +8,7 @@
   <a href="#"><img src="https://img.shields.io/badge/invite%20her-soon-c9b8ec?style=flat&labelColor=8f79c9" alt="invite her" /></a>
   <a href="https://discord.gg/ytsuErErG5"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2FytsuErErG5%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&logo=discord&logoColor=white&label=support%20server&labelColor=8f79c9&color=c9b8ec" alt="support server" /></a>
   <a href="#"><img src="https://img.shields.io/badge/docs-soon-c9b8ec?style=flat&labelColor=8f79c9" alt="docs" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/github/license/stinkmage/kusako?style=flat&labelColor=8f79c9&color=c9b8ec" alt="license" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/shrimpsumi/kusako?style=flat&labelColor=8f79c9&color=c9b8ec" alt="license" /></a>
 </p>
 
 kusako is a chunky discord bot full of features for your community servers! she can handle economy, level roles, custom usable items, server shops, and has a super extensible autoresponder system. sako is written in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file, so you don't gotta host anything besides her !
