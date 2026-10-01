@@ -23,11 +23,6 @@ import { schedule } from './schedule.js';
 import { tickets } from './tickets.js';
 import { rolemenu } from './rolemenu.js';
 import { birthday } from './birthday.js';
-import { coinflip } from './coinflip.js';
-import { blackjack } from './blackjack.js';
-import { stats } from './stats.js';
-import { roulette } from './roulette.js';
-import { ridethebus } from './ridethebus.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -53,9 +48,4 @@ export const commands: SlashCommand[] = [
   tickets,
   rolemenu,
   birthday,
-  coinflip,
-  blackjack,
-  stats,
-  roulette,
-  ridethebus,
 ];
