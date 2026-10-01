@@ -27,17 +27,20 @@ const MAX_EMBEDS = 3;
 const MAX_ROLE_TAGS = 25;
 
 const EPHEMERAL_CONFLICTS: Array<[string, string]> = [
-  ['delay', "i can't send the rest of a private reply later"],
-  ['split', 'a private reply is always one message'],
-  ['delete_reply', "private replies fade on their own, i can't delete them"],
-  ['reactreply', 'nobody can react to a private reply'],
+  ['delay', "delay doesn't work with ephemeral replies!"],
+  ['split', 'a private reply can only be a single message.'],
+  ['delete_reply', "ephemerals despawn on their own, i can't delete 'em!"],
+  ['reactreply', 'i cannot add a reaction to an ephemeral reply!'],
 ];
 
 const TICKET_CONFLICTS = new Map<string, string>([
-  ['dm', 'the greeting has to land in the ticket itself'],
-  ['send', 'the greeting has to land in the ticket itself'],
-  ['ephemeral', 'everyone in the ticket needs to see the greeting'],
-  ['delete_reply', 'that would delete the greeting and the close button too'],
+  ['dm', 'the greeting message MUST be in the ticket!'],
+  ['send', 'the greeting message MUST be in the ticket!'],
+  ['ephemeral', 'everyone in the ticket needs to see the greeting.'],
+  [
+    'delete_reply',
+    'that would delete the greeting and the close button too...',
+  ],
   ['cooldown', 'the ticket type carries its own cooldown already'],
 ]);
 
