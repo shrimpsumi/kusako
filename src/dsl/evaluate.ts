@@ -340,7 +340,7 @@ export async function evaluate(
       );
       if (remaining > 0) {
         // (as-prebind):: origin; this returns before later binds run
-        return fail(`slow down !! try again in ${formatDuration(remaining)}`, {
+        return fail(`slow down,,, try again in ${formatDuration(remaining)}`, {
           'cooldown.remaining': formatDuration(remaining),
           'cooldown.total': formatDuration(seconds),
         });

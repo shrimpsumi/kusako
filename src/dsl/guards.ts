@@ -294,7 +294,7 @@ export const guards = new Map<string, Guard>([
       if (channel && ctx.channel.id === channel.id) {
         return {
           ok: false,
-          message: `not here ! that one's off-limits in ${channel.toString()}`,
+          message: `not here,, that one's off-limits in ${channel.toString()}`,
         };
       }
       return { ok: true };

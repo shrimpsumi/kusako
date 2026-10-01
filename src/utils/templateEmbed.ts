@@ -83,7 +83,7 @@ export function templateTraits(response: string): {
   if (cooldown) badges.push(`${cooldown} cooldown`);
   if (has('silent')) {
     badges.push('silent');
-    does.push('fails silently');
+    does.push('no fail message');
   }
   if (has('dm')) {
     badges.push('dms');

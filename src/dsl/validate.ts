@@ -188,7 +188,7 @@ export function ticketIssues(nodes: Node[]): string[] {
     if (guards.has(node.name)) {
       seen.add(node.name);
       errors.push(
-        `{${node.name}} can't go in a ticket greeting ! the channel already exists by the time this runs, so a guard failing would just leave an empty ticket behind`,
+        `{${node.name}} can't go in a ticket greeting. the channel already exists by the time this runs, so a guard failing would just leave an empty ticket behind`,
       );
       continue;
     }
@@ -196,7 +196,7 @@ export function ticketIssues(nodes: Node[]): string[] {
     const why = TICKET_CONFLICTS.get(node.name);
     if (why) {
       seen.add(node.name);
-      errors.push(`{${node.name}} can't go in a ticket greeting ! ${why}`);
+      errors.push(`{${node.name}} can't go in a ticket greeting,, ${why}`);
     }
   }
 
@@ -263,7 +263,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       if (node.name === 'range' && !RANGE_FORMAT.test(node.args[0] ?? '')) {
         errors.push(
           /\sas\s+\w+/i.test(node.args[0] ?? '')
-            ? `"as" goes before the colon ! write {range as name: 10-100}, not {range:10-100 as name}`
+            ? `"as" goes before the colon,, write {range as name: 10-100}, not {range:10-100 as name}`
             : `{range} needs a number span, like {range:10-100}`,
         );
       }
@@ -282,7 +282,7 @@ export function validateTemplate(nodes: Node[]): string[] {
           const match = WEIGHTED_OPTION.exec(option);
           if (!match || Number(match[1]) <= 0) {
             errors.push(
-              `"${option}" needs a weight in front ! write {weightedchoice as name: 70 common | 25 rare | 5 legendary}`,
+              `"${option}" needs a weight in front. write {weightedchoice as name: 70 common | 25 rare | 5 legendary}`,
             );
           }
         }
@@ -526,7 +526,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       const arg = (node.args[0] ?? '').trim();
       if (arg.startsWith('#') && parseColor(arg) === null) {
         errors.push(
-          `{embed:${arg}} isn't a valid hex color ! try something like {embed:#faf0e7}`,
+          `{embed:${arg}} isn't a valid hex color,, try something like {embed:#faf0e7}`,
         );
       }
       continue;
@@ -673,7 +673,7 @@ export function validateTemplate(nodes: Node[]): string[] {
 
   if (boundaries > MAX_SEGMENTS - 1) {
     errors.push(
-      `that would send more than ${MAX_SEGMENTS} messages ! max is ${MAX_SEGMENTS} (so up to ${MAX_SEGMENTS - 1} {split}/{delay} tags)`,
+      `that would send more than ${MAX_SEGMENTS} messages. max is ${MAX_SEGMENTS} (so up to ${MAX_SEGMENTS - 1} {split}/{delay} tags)`,
     );
   }
 
@@ -682,7 +682,7 @@ export function validateTemplate(nodes: Node[]): string[] {
       nodes.some((node) => node.kind === 'placeholder' && node.name === name);
     for (const [tag, why] of EPHEMERAL_CONFLICTS) {
       if (has(tag)) {
-        errors.push(`{ephemeral} and {${tag}} can't go together ! ${why}`);
+        errors.push(`{ephemeral} and {${tag}} can't go together,, ${why}`);
       }
     }
   }
@@ -694,7 +694,7 @@ export function validateTemplate(nodes: Node[]): string[] {
     );
     if (rows > MAX_ROWS) {
       errors.push(
-        `that's ${rows} rows of buttons and dropdowns, and discord only allows ${MAX_ROWS} ! every dropdown takes a whole row, and buttons sit ${BUTTONS_PER_ROW} to a row`,
+        `that's ${rows} rows of buttons and dropdowns, and discord only allows ${MAX_ROWS}! every dropdown takes a whole row, and buttons fit ${BUTTONS_PER_ROW} a row`,
       );
     }
   }

@@ -161,7 +161,7 @@ export function pendingCount(): number {
 
 export function problemReply(problems: string[], submitted: string): string {
   return [
-    "i didn't save any of that ! here's what tripped me up:",
+    "i didn't save any of that,, here's what tripped me up:",
     ...problems.map((problem) => `• ${problem}`),
     '',
     'fix it and paste again:',

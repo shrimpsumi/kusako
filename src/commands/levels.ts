@@ -36,7 +36,7 @@ function levelDetailEmbed(
     notes: off
       ? [
           ...notes,
-          `leveling is OFF here ! this won't send until you turn it on with ${commandMention('/settings set levels')}`,
+          `leveling is OFF here... this won't send until you turn it on with ${commandMention('/settings set levels')}`,
         ]
       : notes,
     fields: [
@@ -57,7 +57,7 @@ function levelsPage(guild: Guild, _userId: string, page: number) {
       .setTitle('level replies !')
       .setColor(0xffb5f9)
       .setDescription(
-        `no level replies yet ! add one with ${commandMention('/levels set')}`,
+        `no level replies yet,, add one with ${commandMention('/levels set')}`,
       );
 
     return { embeds: [embed], components: [] };
@@ -237,7 +237,7 @@ export const levels: SlashCommand = {
       removeLevelReply(guildId, level);
 
       const embed = serverEmbed(interaction.guild).setDescription(
-        `## removed the level ${level} reply !\n${codeBlock(found.response)}\n-# level ${level} goes by quietly now,, put it back with ${commandMention('/levels set')}`,
+        `## removed the level ${level} reply !\n${codeBlock(found.response)}\n-# level ${level} won't send anything now,, put it back with ${commandMention('/levels set')}`,
       );
 
       await interaction.reply({ embeds: [embed] });

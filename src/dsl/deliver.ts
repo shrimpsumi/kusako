@@ -270,7 +270,7 @@ export interface DeliveryTarget {
   interaction?: RepliableInteraction;
 }
 
-const DM_FAIL_NOTICE = "i couldn't dm you ! check your privacy settings :c";
+const DM_FAIL_NOTICE = "i couldn't dm you,, check your privacy settings :c";
 
 export async function deliver(
   segments: Segment[],

@@ -224,7 +224,7 @@ export const shop: SlashCommand = {
       if (!result.ok) {
         let message: string;
         if (result.reason === 'poor') {
-          message = `you need ${currency.emoji} **${result.price.toLocaleString('en-US')}** for that ! you only have ${result.balance.toLocaleString('en-US')} !`;
+          message = `you need ${currency.emoji} **${result.price.toLocaleString('en-US')}** for that,, you only have ${result.balance.toLocaleString('en-US')} !`;
         } else if (result.reason === 'sold-out') {
           message = "it's sold out :c come back later !";
         } else {
@@ -261,7 +261,7 @@ export const shop: SlashCommand = {
       const item = getItem(guildId, name);
       if (!item) {
         await interaction.reply({
-          content: `there's no item called ${inlineCode(name)} ! make it first with ${inlineCode('/items add')}`,
+          content: `there's no item called ${inlineCode(name)},, make it first with ${inlineCode('/items add')}`,
         });
         return;
       }
@@ -300,7 +300,7 @@ export const shop: SlashCommand = {
       const embed = serverEmbed(interaction.guild)
         .setTitle('off the shelf !')
         .setDescription(
-          `${inlineCode(name)} is no longer for sale ! anyone who already bought one keeps it`,
+          `${inlineCode(name)} is no longer for sale. anyone who already bought one keeps it`,
         );
 
       await interaction.reply({ embeds: [embed] });

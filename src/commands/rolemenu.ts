@@ -112,7 +112,7 @@ function readSettings(interaction: ChatInputCommandInteraction): RoleMenuInput {
 function pasteHint(guild: Guild, menu: RoleMenu): string {
   const current = serializeRoleLines(guild, menu.roles);
   const lines = [
-    `paste your roles here as one message, one per line ! you've got ${Math.round(PENDING_MS / 60_000)} minutes, or say ${inlineCode('cancel')}`,
+    `paste your roles here as one message, one per line. you've got ${Math.round(PENDING_MS / 60_000)} minutes, or say ${inlineCode('cancel')}`,
     codeBlock('@role | label | emoji'),
     `label and emoji are optional,, up to **${MAX_MENU_ROLES}** roles`,
     `-# role mentions can ping, so do this somewhere quiet !`,
@@ -226,7 +226,7 @@ async function runAdd(
 
   if (!createRoleMenu(guild.id, name, readSettings(interaction))) {
     await interaction.reply({
-      content: `there's already a ${inlineCode(roleMenuKey(name))} role menu ! change it with ${commandMention('/rolemenu roles')}`,
+      content: `there's already a ${inlineCode(roleMenuKey(name))} role menu. change it with ${commandMention('/rolemenu roles')}`,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -316,7 +316,7 @@ async function runList(
           .setTitle('role menus !')
           .setColor(0xaeb4c5)
           .setDescription(
-            `none yet ! make one with ${commandMention('/rolemenu add')}`,
+            `none yet,, make one with ${commandMention('/rolemenu add')}`,
           ),
       ],
     });

@@ -280,9 +280,9 @@ export const events: SlashCommand = {
 
       const excuse =
         outcome.kind === 'no-template'
-          ? `there's no ${inlineCode(kind)} reply yet ! write one with ${commandMention('/events set')}`
+          ? `there's no ${inlineCode(kind)} reply yet,, write one with ${commandMention('/events set')}`
           : outcome.kind === 'no-channel'
-            ? `${inlineCode(kind)} has nowhere to go ! pick a channel with ${commandMention('/events channel')}`
+            ? `${inlineCode(kind)} has nowhere to go,, pick a channel with ${commandMention('/events channel')}`
             : `something in the reply stopped it, so nothing sent:\n> ${outcome.reason}`;
 
       const embed = serverEmbed(interaction.guild).setDescription(

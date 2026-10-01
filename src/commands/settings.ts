@@ -368,7 +368,7 @@ export const settings: SlashCommand = {
       ) {
         await interaction.reply({
           content:
-            'give me something to change !! (min, max, cooldown, and/or enabled)',
+            'give me something to change (min, max, cooldown, and/or enabled) !!',
         });
         return;
       }
@@ -378,7 +378,7 @@ export const settings: SlashCommand = {
       const nextMax = max ?? current.maxReward;
       if (nextMin > nextMax) {
         await interaction.reply({
-          content: `min can't be bigger than max !! that would make the range ${nextMin.toLocaleString('en-US')}-${nextMax.toLocaleString('en-US')}`,
+          content: `min can't be bigger than max,, that would make the range ${nextMin.toLocaleString('en-US')}-${nextMax.toLocaleString('en-US')}`,
         });
         return;
       }
@@ -418,7 +418,7 @@ export const settings: SlashCommand = {
       if (!live && !archive) {
         await interaction.reply({
           content:
-            'pick at least one ! **category** is where tickets open, **archive** is where closed ones go',
+            'pick at least one. **category** is where tickets open, **archive** is where closed ones go',
           flags: MessageFlags.Ephemeral,
         });
         return;

@@ -77,16 +77,16 @@ function readInterval(raw: string): { seconds: number } | { error: string } {
   if (seconds === null) {
     return {
       error:
-        "i can't read that interval !! try something like `6h`, `30m` or `1d 12h`",
+        "i can't read that interval,, try something like `6h`, `30m` or `1d 12h`",
     };
   }
   if (seconds < MIN_INTERVAL_SECONDS) {
     return {
-      error: `that's too often ! the shortest repeat is ${formatSeconds(MIN_INTERVAL_SECONDS)}`,
+      error: `that's too often. the shortest repeat is ${formatSeconds(MIN_INTERVAL_SECONDS)}`,
     };
   }
   if (seconds > YEAR_SECONDS) {
-    return { error: "that's longer than a year !! pick something smaller" };
+    return { error: "that's longer than a year,,, pick something smaller" };
   }
   return { seconds };
 }
@@ -108,7 +108,7 @@ function readOnceTime(
   if (delay === null || delay > YEAR_SECONDS) {
     return {
       error:
-        "i can't read that !! try something like `3d`, `2h30m`, or a unix timestamp",
+        "i can't read that. try something like `3d`, `2h30m`, or a unix timestamp",
     };
   }
   return { at: now + delay * 1000 };
@@ -143,7 +143,7 @@ function detailEmbed(guild: Guild, schedule: ScheduledTemplate) {
   const zone = getGuildTimezone(guild.id);
   const when =
     schedule.state === 'missed'
-      ? 'missed ! sako was down when it was due'
+      ? 'missed, sako was down when it was due'
       : `${describe(schedule, zone)} · next ${stamp(schedule.nextRun)}`;
 
   return templateDetailEmbed(
@@ -212,7 +212,7 @@ async function handleAdd(
       await interaction.reply({
         embeds: [
           failureEmbed(
-            "i can't read that time !! try something like `7pm`, `7:30pm` or `19:00`",
+            "i can't read that time,, try something like `7pm`, `7:30pm` or `19:00`",
           ),
         ],
       });
@@ -259,7 +259,7 @@ async function handleAdd(
     await interaction.reply({
       embeds: [
         failureEmbed(
-          `this server already has ${MAX_SCHEDULES_PER_GUILD} schedules going ! remove one with ${commandMention('/schedule remove')} first`,
+          `this server already has ${MAX_SCHEDULES_PER_GUILD} schedules going. remove one with ${commandMention('/schedule remove')} first`,
         ),
       ],
     });
@@ -282,7 +282,7 @@ async function handleEdit(
     await interaction.reply({
       embeds: [
         failureEmbed(
-          `there's no schedule **${id}** here ! check ${commandMention('/schedule list')}`,
+          `there's no schedule **${id}** here,, check ${commandMention('/schedule list')}`,
         ),
       ],
     });
@@ -307,7 +307,7 @@ async function handleEdit(
     await interaction.reply({
       embeds: [
         failureEmbed(
-          'give me something to change !! (channel, reply, time, day, interval, or in)',
+          'give me something to change (channel, reply, time, day, interval, or in) !!',
         ),
       ],
     });
@@ -317,7 +317,7 @@ async function handleEdit(
   const calendar =
     found.repeatKind === 'daily' || found.repeatKind === 'weekly';
   const wrongKind = (option: string, instead: string): string =>
-    `schedule ${found.id} runs ${describe(found, null)}, so \`${option}:\` means nothing to it ! ${instead}`;
+    `schedule ${found.id} runs ${describe(found, null)}, so \`${option}:\` means nothing to it,, ${instead}`;
 
   if (time !== null && !calendar) {
     await interaction.reply({
@@ -387,7 +387,7 @@ async function handleEdit(
       await interaction.reply({
         embeds: [
           failureEmbed(
-            "i can't read that time !! try something like `7pm`, `7:30pm` or `19:00`",
+            "i can't read that time,, try something like `7pm`, `7:30pm` or `19:00`",
           ),
         ],
       });
@@ -687,7 +687,7 @@ export const schedule: SlashCommand = {
           .setTitle('scheduled posts !')
           .setColor(0x968bc9)
           .setDescription(
-            `nothing lined up yet ! start one with ${commandMention('/schedule add daily')}`,
+            `nothing lined up yet,, start one with ${commandMention('/schedule add daily')}`,
           );
         await interaction.reply({ embeds: [empty] });
         return;
@@ -724,7 +724,7 @@ export const schedule: SlashCommand = {
       await interaction.reply({
         embeds: [
           failureEmbed(
-            `there's no schedule **${id}** here ! check ${commandMention('/schedule list')}`,
+            `there's no schedule **${id}** here,, check ${commandMention('/schedule list')}`,
           ),
         ],
       });
