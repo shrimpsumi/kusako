@@ -1,12 +1,7 @@
 import { channelMention } from 'discord.js';
 
 import { getCurrency } from '../economy/guild.js';
-import {
-  getPatSettings,
-  getGamblingSettings,
-  isGameEnabled,
-  isGamblingEnabled,
-} from '../games/store.js';
+import { getPatSettings, isGameEnabled } from '../games/store.js';
 import { isLevelingEnabled } from '../levels/store.js';
 import { getEventReply } from '../guildEvents/store.js';
 import { EVENTS } from '../guildEvents/registry.js';
@@ -39,7 +34,7 @@ export const GROUPS: Omit<SettingGroup, 'settings'>[] = [
     id: 'economy',
     label: 'economy',
     description:
-      "your server's currency, the commands that earn it like /pat, and gambling",
+      "your server's currency and the commands that earn it like /pat",
   },
   {
     id: 'leveling',
@@ -110,31 +105,6 @@ export const SETTINGS: SettingEntry[] = [
         option: 'enabled',
         command: '/settings set pat',
         value: (guildId) => onOff(isGameEnabled(guildId, 'pat')),
-      },
-    ],
-  },
-  {
-    id: 'gambling',
-    group: 'economy',
-    label: 'gambling',
-    knobs: [
-      {
-        option: 'min',
-        command: '/settings set gambling',
-        value: (guildId) => n(getGamblingSettings(guildId).minBet),
-      },
-      {
-        option: 'max',
-        command: '/settings set gambling',
-        value: (guildId) => {
-          const { maxBet } = getGamblingSettings(guildId);
-          return maxBet === 0 ? 'no limit' : n(maxBet);
-        },
-      },
-      {
-        option: 'enabled',
-        command: '/settings set gambling',
-        value: (guildId) => onOff(isGamblingEnabled(guildId)),
       },
     ],
   },
