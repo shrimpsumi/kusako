@@ -69,12 +69,10 @@ kusako is a chunky discord bot full of features for your community servers! she 
 - live builder: buttons and modals in discord, with a live preview
 - JSON import: paste from any embed builder site
 
-### minigames & gambling !
+### minigames !
 
 - `/pat`: give sako headpats and she'll tip you some currency
-- `/coinflip`, `/blackjack`, `/roulette`, and `/ridethebus`: bet your currency and try your luck
-- `/stats`: see your wins, losses, and streaks for each game
-- fully configurable: disable gambling games, configure min & max bets, and change cooldowns
+- configurable: change how much she tips and how often, or turn it off
 
 ### in the works !
 
