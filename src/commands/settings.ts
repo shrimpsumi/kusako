@@ -33,9 +33,6 @@ import { setCurrency } from '../services/economy/guild.js';
 import {
   getPatSettings,
   setPatSettings,
-  getGamblingSettings,
-  setGamblingSettings,
-  setGamblingEnabled,
   setGameEnabled,
 } from '../services/games/store.js';
 import { setLevelingEnabled } from '../services/levels/store.js';
@@ -282,30 +279,6 @@ export const settings: SlashCommand = {
         )
         .addSubcommand((sub) =>
           sub
-            .setName('gambling')
-            .setDescription('configure coinflip and other gambling games')
-            .addIntegerOption((o) =>
-              o
-                .setName('min')
-                .setDescription('smallest bet allowed')
-                .setMinValue(1)
-                .setMaxValue(1_000_000),
-            )
-            .addIntegerOption((o) =>
-              o
-                .setName('max')
-                .setDescription('biggest bet allowed, 0 for no limit')
-                .setMinValue(0)
-                .setMaxValue(1_000_000_000),
-            )
-            .addBooleanOption((o) =>
-              o
-                .setName('enabled')
-                .setDescription('turn gambling on or off for this server'),
-            ),
-        )
-        .addSubcommand((sub) =>
-          sub
             .setName('levels')
             .setDescription('turn leveling on or off')
             .addBooleanOption((o) =>
@@ -417,39 +390,6 @@ export const settings: SlashCommand = {
         ...(cooldown !== null ? { cooldownSeconds: cooldown * 60 } : {}),
       });
       if (enabled !== null) setGameEnabled(guildId, 'pat', enabled);
-
-      await interaction.reply(updatedReply(interaction, setting));
-      return;
-    }
-
-    if (group === 'set' && sub === 'gambling') {
-      const min = interaction.options.getInteger('min');
-      const max = interaction.options.getInteger('max');
-      const enabled = interaction.options.getBoolean('enabled');
-
-      if (min === null && max === null && enabled === null) {
-        await interaction.reply({
-          content: 'give me something to change !! (min, max, and/or enabled)',
-        });
-        return;
-      }
-
-      const current = getGamblingSettings(guildId);
-      const nextMin = min ?? current.minBet;
-      const nextMax = max ?? current.maxBet;
-      if (nextMax > 0 && nextMin > nextMax) {
-        await interaction.reply({
-          content: `min can't be bigger than max !! that would make the range ${nextMin.toLocaleString('en-US')}-${nextMax.toLocaleString('en-US')}`,
-        });
-        return;
-      }
-
-      const setting = findSetting('gambling')!;
-      setGamblingSettings(guildId, {
-        ...(min !== null ? { minBet: min } : {}),
-        ...(max !== null ? { maxBet: max } : {}),
-      });
-      if (enabled !== null) setGamblingEnabled(guildId, enabled);
 
       await interaction.reply(updatedReply(interaction, setting));
       return;

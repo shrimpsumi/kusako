@@ -271,21 +271,6 @@ CREATE TABLE IF NOT EXISTS birthdays (
 CREATE INDEX IF NOT EXISTS idx_birthdays_day
   ON birthdays (month, day);
 
-CREATE TABLE IF NOT EXISTS game_stats (
-  guild_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
-  game TEXT NOT NULL,
-  played INTEGER NOT NULL,
-  wins INTEGER NOT NULL,
-  losses INTEGER NOT NULL,
-  streak INTEGER NOT NULL,
-  best_streak INTEGER NOT NULL,
-  net INTEGER NOT NULL,
-  best_win INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL,
-  PRIMARY KEY (guild_id, user_id, game)
-);
-
 CREATE TABLE IF NOT EXISTS global_balances (
   user_id TEXT NOT NULL,
   currency TEXT NOT NULL,
@@ -322,12 +307,35 @@ function hasColumn(
   return rows.some((row) => row.name === column);
 }
 
+function hasTable(database: Database.Database, table: string): boolean {
+  return (
+    database
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table) !== undefined
+  );
+}
+
 function migrate(database: Database.Database): void {
   if (!hasColumn(database, 'role_menus', 'show_clear')) {
     database.exec(
       'ALTER TABLE role_menus ADD COLUMN show_clear INTEGER NOT NULL DEFAULT 1',
     );
     logger.info('migrated: role_menus.show_clear');
+  }
+
+  if (hasTable(database, 'game_stats')) {
+    database.exec('DROP TABLE game_stats');
+    logger.info('migrated: dropped game_stats');
+  }
+
+  const gambling = database
+    .prepare("DELETE FROM guild_settings WHERE key LIKE 'gambling.%'")
+    .run();
+  if (gambling.changes > 0) {
+    logger.info(
+      { rows: gambling.changes },
+      'migrated: removed gambling settings',
+    );
   }
 }
 
