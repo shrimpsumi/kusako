@@ -312,9 +312,16 @@ export async function deliver(
           target.member?.id,
         )
       : [];
+  const replyTo =
+    actions.replyTrigger && destination === target.channel
+      ? target.triggerMessage
+      : undefined;
   const extras = {
     components: buttonRows.length > 0 ? buttonRows : undefined,
     files: actions.files.length > 0 ? actions.files : undefined,
+    reply: replyTo
+      ? { messageReference: replyTo, failIfNotExists: false }
+      : undefined,
   };
   const hasExtras =
     extras.components !== undefined || extras.files !== undefined;
@@ -342,7 +349,7 @@ export async function deliver(
             content: content.length > 0 ? content : undefined,
             embeds: segment.embeds,
             ...(firstSent ? {} : extras),
-            allowedMentions: { parse: ['users', 'roles'] },
+            allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
           });
           firstSent ??= sent;
         } else {
@@ -368,7 +375,10 @@ export async function deliver(
 
     if (!firstSent && hasExtras) {
       try {
-        firstSent = await destination.send(extras);
+        firstSent = await destination.send({
+          ...extras,
+          allowedMentions: { parse: [], repliedUser: true },
+        });
       } catch (err) {
         logger.warn({ err }, 'button or file only message failed');
       }
