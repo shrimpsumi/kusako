@@ -5,7 +5,6 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   MessageFlags,
-  GuildPremiumTier,
   type MessageActionRowComponentBuilder,
   type GuildMember,
   type PartialGuildMember,
@@ -37,6 +36,7 @@ import {
   type RoleMenu,
 } from '../services/roleMenus/store.js';
 import { logger } from '../logger.js';
+import { downloadFile, uploadLimit } from './files.js';
 import {
   BUTTONS_PER_ROW,
   MAX_ROWS,
@@ -273,18 +273,6 @@ export interface DeliveryTarget {
 
 const DM_FAIL_NOTICE = "i couldn't dm you,, check your privacy settings :c";
 
-export const MB = 1024 * 1024;
-const UPLOAD_LIMITS: Record<GuildPremiumTier, number> = {
-  [GuildPremiumTier.None]: 10 * MB,
-  [GuildPremiumTier.Tier1]: 10 * MB,
-  [GuildPremiumTier.Tier2]: 50 * MB,
-  [GuildPremiumTier.Tier3]: 100 * MB,
-};
-
-export function uploadLimit(tier: GuildPremiumTier, dm: boolean): number {
-  return UPLOAD_LIMITS[dm ? GuildPremiumTier.None : tier];
-}
-
 export async function deliver(
   segments: Segment[],
   actions: MessageActions,
@@ -316,9 +304,13 @@ export async function deliver(
     actions.replyTrigger && destination === target.channel
       ? target.triggerMessage
       : undefined;
+  const limit = uploadLimit(target.channel.guild.premiumTier, actions.dm);
+  const files = (
+    await Promise.all(actions.files.map((url) => downloadFile(url, limit)))
+  ).filter((file) => file !== null);
   const extras = {
     components: buttonRows.length > 0 ? buttonRows : undefined,
-    files: actions.files.length > 0 ? actions.files : undefined,
+    files: files.length > 0 ? files : undefined,
     reply: replyTo
       ? { messageReference: replyTo, failIfNotExists: false }
       : undefined,

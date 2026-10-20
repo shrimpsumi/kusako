@@ -10,7 +10,8 @@ import type { Node } from '../dsl/ast.js';
 import { parse } from '../dsl/parser.js';
 import { templateIssues } from '../dsl/validate.js';
 import { evaluate } from '../dsl/evaluate.js';
-import { deliver, uploadLimit, MB } from '../dsl/deliver.js';
+import { deliver } from '../dsl/deliver.js';
+import { uploadLimit, MB } from '../dsl/files.js';
 import { userEmbed, failureEmbed, NO_DMS } from '../utils/style.js';
 
 const MESSAGE_MAX = 2000;
