@@ -98,6 +98,7 @@ export function templateTraits(response: string): {
     does.push(`sends to ${sendTo}`);
   }
   if (has('deletetrigger')) does.push('deletes the trigger');
+  if (has('replytrigger')) does.push('replies to the trigger');
 
   const embedTags = nodes.filter((node) => node.name === 'embed');
   const namedEmbeds = embedTags.filter((node) => {
@@ -112,6 +113,7 @@ export function templateTraits(response: string): {
   if (embedTags.length > namedEmbeds.length) {
     does.push('wraps the reply in an embed');
   }
+  if (has('file')) does.push('attaches a file');
 
   const buttons = nodes.filter(
     (node) => node.name === 'button' || node.name === 'linkbutton',
