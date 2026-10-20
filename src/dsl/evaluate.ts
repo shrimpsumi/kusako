@@ -74,6 +74,7 @@ export interface MessageActions {
   >;
   dropdowns: Array<{ placeholder: string; options: string[] }>;
   roleMenu: string | null;
+  files: string[];
 }
 
 export type EvalResult =
@@ -224,6 +225,7 @@ export async function evaluate(
     buttons: [],
     dropdowns: [],
     roleMenu: null,
+    files: [],
   };
 
   const silent = nodes.some(

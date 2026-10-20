@@ -5,6 +5,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   MessageFlags,
+  GuildPremiumTier,
   type MessageActionRowComponentBuilder,
   type GuildMember,
   type PartialGuildMember,
@@ -272,6 +273,18 @@ export interface DeliveryTarget {
 
 const DM_FAIL_NOTICE = "i couldn't dm you,, check your privacy settings :c";
 
+const MB = 1024 * 1024;
+const UPLOAD_LIMITS: Record<GuildPremiumTier, number> = {
+  [GuildPremiumTier.None]: 10 * MB,
+  [GuildPremiumTier.Tier1]: 10 * MB,
+  [GuildPremiumTier.Tier2]: 50 * MB,
+  [GuildPremiumTier.Tier3]: 100 * MB,
+};
+
+export function uploadLimit(tier: GuildPremiumTier, dm: boolean): number {
+  return UPLOAD_LIMITS[dm ? GuildPremiumTier.None : tier];
+}
+
 export async function deliver(
   segments: Segment[],
   actions: MessageActions,
@@ -299,7 +312,12 @@ export async function deliver(
           target.member?.id,
         )
       : [];
-  let buttonsAttached = false;
+  const extras = {
+    components: buttonRows.length > 0 ? buttonRows : undefined,
+    files: actions.files.length > 0 ? actions.files : undefined,
+  };
+  const hasExtras =
+    extras.components !== undefined || extras.files !== undefined;
 
   const ephemeral = actions.ephemeral && !actions.dm && target.interaction;
   if (ephemeral) {
@@ -320,14 +338,12 @@ export async function deliver(
 
       try {
         if (offset === 0) {
-          const attachButtons = !buttonsAttached && buttonRows.length > 0;
-          const sent = await destination.send({
+          const sent: Message = await destination.send({
             content: content.length > 0 ? content : undefined,
             embeds: segment.embeds,
-            components: attachButtons ? buttonRows : undefined,
+            ...(firstSent ? {} : extras),
             allowedMentions: { parse: ['users', 'roles'] },
           });
-          if (attachButtons) buttonsAttached = true;
           firstSent ??= sent;
         } else {
           scheduleMessage(
@@ -350,12 +366,11 @@ export async function deliver(
       }
     }
 
-    if (!buttonsAttached && buttonRows.length > 0) {
+    if (!firstSent && hasExtras) {
       try {
-        const sent = await destination.send({ components: buttonRows });
-        firstSent ??= sent;
+        firstSent = await destination.send(extras);
       } catch (err) {
-        logger.warn({ err }, 'button-only message failed');
+        logger.warn({ err }, 'button or file only message failed');
       }
     }
   }
