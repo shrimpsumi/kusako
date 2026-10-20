@@ -2,13 +2,15 @@ import {
   SlashCommandBuilder,
   PermissionFlagsBits,
   MessageFlags,
+  type GuildPremiumTier,
 } from 'discord.js';
 
 import type { SlashCommand } from '../client.js';
+import type { Node } from '../dsl/ast.js';
 import { parse } from '../dsl/parser.js';
 import { templateIssues } from '../dsl/validate.js';
 import { evaluate } from '../dsl/evaluate.js';
-import { deliver } from '../dsl/deliver.js';
+import { deliver, uploadLimit, MB } from '../dsl/deliver.js';
 import { userEmbed, failureEmbed, NO_DMS } from '../utils/style.js';
 
 const MESSAGE_MAX = 2000;
@@ -23,6 +25,24 @@ function sendIssues(message: string): string | null {
   return templateIssues(message);
 }
 
+function fileIssues(
+  size: number,
+  nodes: Node[],
+  tier: GuildPremiumTier,
+): string | null {
+  const uses = (name: string) =>
+    nodes.some((node) => node.kind === 'placeholder' && node.name === name);
+  if (uses('ephemeral')) {
+    return "{ephemeral} can't send files,, take one of them out";
+  }
+  const dm = uses('dm');
+  const limit = uploadLimit(tier, dm);
+  if (size > limit) {
+    return `that file is too big for me,, i can only upload ${limit / MB}MB ${dm ? 'to dms' : 'here'}`;
+  }
+  return null;
+}
+
 export const send: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('send')
@@ -32,8 +52,10 @@ export const send: SlashCommand = {
       o
         .setName('message')
         .setDescription('what should i say !')
-        .setMaxLength(MESSAGE_MAX)
-        .setRequired(true),
+        .setMaxLength(MESSAGE_MAX),
+    )
+    .addAttachmentOption((o) =>
+      o.setName('file').setDescription('an image or file for me to post'),
     ) as SlashCommandBuilder,
 
   async execute(interaction) {
@@ -50,9 +72,20 @@ export const send: SlashCommand = {
       return;
     }
 
-    const message = interaction.options.getString('message', true);
+    const message = interaction.options.getString('message') ?? '';
+    const file = interaction.options.getAttachment('file');
 
-    const issues = sendIssues(message);
+    if (message.trim().length === 0 && !file) {
+      await interaction.reply({ content: 'give me something to send !' });
+      return;
+    }
+
+    const nodes = parse(message);
+    const issues =
+      sendIssues(message) ??
+      (file
+        ? fileIssues(file.size, nodes, interaction.guild.premiumTier)
+        : null);
     if (issues) {
       await interaction.reply({
         content: issues,
@@ -61,7 +94,6 @@ export const send: SlashCommand = {
       return;
     }
 
-    const nodes = parse(message);
     const wantsEphemeral = nodes.some(
       (node) => node.kind === 'placeholder' && node.name === 'ephemeral',
     );
@@ -83,6 +115,8 @@ export const send: SlashCommand = {
       });
       return;
     }
+
+    if (file) result.actions.files.push(file.url);
 
     if (!result.actions.ephemeral) {
       const destination = result.actions.dm

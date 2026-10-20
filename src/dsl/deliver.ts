@@ -273,7 +273,7 @@ export interface DeliveryTarget {
 
 const DM_FAIL_NOTICE = "i couldn't dm you,, check your privacy settings :c";
 
-const MB = 1024 * 1024;
+export const MB = 1024 * 1024;
 const UPLOAD_LIMITS: Record<GuildPremiumTier, number> = {
   [GuildPremiumTier.None]: 10 * MB,
   [GuildPremiumTier.Tier1]: 10 * MB,
