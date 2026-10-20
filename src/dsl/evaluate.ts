@@ -30,6 +30,7 @@ import {
   type GuardSubject,
 } from './guards.js';
 import { effects, pendingOf, EffectError } from './effects.js';
+import { isAllowedFileUrl } from './files.js';
 import { getCooldownRemaining, setCooldown } from '../services/cooldowns.js';
 import {
   interpolateArgs,
@@ -408,6 +409,16 @@ export async function evaluate(
 
     if (node.name === 'replytrigger') {
       actions.replyTrigger = true;
+      continue;
+    }
+
+    if (node.name === 'file') {
+      const url = (args[0] ?? '').trim();
+      if (!isAllowedFileUrl(url)) {
+        current += node.raw;
+        continue;
+      }
+      actions.files.push(url);
       continue;
     }
 

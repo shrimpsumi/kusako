@@ -20,6 +20,7 @@ import {
   rowsUsed,
 } from './evaluate.js';
 import { URLISH } from '../services/embeds/store.js';
+import { FILE_HOSTS, isAllowedFileUrl, literalFileUrl } from './files.js';
 
 const MAX_SEGMENTS = 3;
 const MAX_REACTIONS = 3;
@@ -31,6 +32,7 @@ const EPHEMERAL_CONFLICTS: Array<[string, string]> = [
   ['split', 'a private reply can only be a single message.'],
   ['delete_reply', "ephemerals despawn on their own, i can't delete 'em!"],
   ['reactreply', 'i cannot add a reaction to an ephemeral reply!'],
+  ['file', "i can't attach files to a private reply!"],
 ];
 
 const TICKET_CONFLICTS = new Map<string, string>([
@@ -223,6 +225,7 @@ export function validateTemplate(nodes: Node[]): string[] {
   let roleMenus = 0;
   let errorTags = 0;
   let ephemerals = 0;
+  let files = 0;
 
   for (const node of nodes) {
     if (node.kind === 'capture-ref') {
@@ -439,6 +442,25 @@ export function validateTemplate(nodes: Node[]): string[] {
       } else if (!URLISH.test((node.args[1] ?? '').trim())) {
         errors.push(
           '{linkbutton} needs a real url (http/https), like {linkbutton:our site | https://frie.rent}',
+        );
+      }
+      continue;
+    }
+
+    if (node.name === 'file') {
+      files += 1;
+      if (files === 2) {
+        errors.push('only one {file} per reply !');
+      }
+      const url = (node.args[0] ?? '').trim();
+      const literal = literalFileUrl(url);
+      if (url.length === 0) {
+        errors.push(
+          '{file} needs a link, like {file:https://cdn.jsdelivr.net/gh/you/repo@main/art.png}',
+        );
+      } else if (literal !== null && !isAllowedFileUrl(literal)) {
+        errors.push(
+          `{file} can only grab https links from ${[...FILE_HOSTS].join(', ')}`,
         );
       }
       continue;
