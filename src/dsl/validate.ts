@@ -677,14 +677,21 @@ export function validateTemplate(nodes: Node[]): string[] {
     );
   }
 
+  const has = (name: string) =>
+    nodes.some((node) => node.kind === 'placeholder' && node.name === name);
+
   if (ephemerals > 0) {
-    const has = (name: string) =>
-      nodes.some((node) => node.kind === 'placeholder' && node.name === name);
     for (const [tag, why] of EPHEMERAL_CONFLICTS) {
       if (has(tag)) {
         errors.push(`{ephemeral} and {${tag}} can't go together,, ${why}`);
       }
     }
+  }
+
+  if (has('replytrigger') && has('deletetrigger')) {
+    errors.push(
+      "{replytrigger} and {deletetrigger} can't go together,, i can't reply to a message i just deleted",
+    );
   }
 
   if (dropdowns > 0 || roleMenus > 0) {

@@ -57,6 +57,7 @@ export interface MessageActions {
   reactions: string[];
   replyReactions: string[];
   deleteTrigger: boolean;
+  replyTrigger: boolean;
   dm: boolean;
   sendToChannelId: string | null;
   roleActions: Array<{
@@ -214,6 +215,7 @@ export async function evaluate(
     reactions: [],
     replyReactions: [],
     deleteTrigger: false,
+    replyTrigger: false,
     dm: false,
     sendToChannelId: null,
     roleActions: [],
@@ -401,6 +403,11 @@ export async function evaluate(
 
     if (node.name === 'deletetrigger') {
       actions.deleteTrigger = true;
+      continue;
+    }
+
+    if (node.name === 'replytrigger') {
+      actions.replyTrigger = true;
       continue;
     }
 
