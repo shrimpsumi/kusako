@@ -1,12 +1,11 @@
 import { db } from '../../db.js';
-import type { BirthdayDate, MonthDay } from './dates.js';
+import type { MonthDay } from './dates.js';
 
 export interface Birthday {
   guildId: string;
   userId: string;
   month: number;
   day: number;
-  year: number | null;
   timezone: string | null;
   lastFiredYear: number | null;
   createdAt: number;
@@ -18,7 +17,6 @@ interface Row {
   user_id: string;
   month: number;
   day: number;
-  year: number | null;
   timezone: string | null;
   last_fired_year: number | null;
   created_at: number;
@@ -31,7 +29,6 @@ function toModel(row: Row): Birthday {
     userId: row.user_id,
     month: row.month,
     day: row.day,
-    year: row.year,
     timezone: row.timezone,
     lastFiredYear: row.last_fired_year,
     createdAt: row.created_at,
@@ -54,20 +51,19 @@ export function getBirthday(guildId: string, userId: string): Birthday | null {
 export function setBirthday(
   guildId: string,
   userId: string,
-  date: BirthdayDate,
+  date: MonthDay,
   timezone: string | null,
 ): void {
   const now = Date.now();
   db()
     .prepare(
       `INSERT INTO birthdays
-         (guild_id, user_id, month, day, year, timezone, last_fired_year, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
+         (guild_id, user_id, month, day, timezone, last_fired_year, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
        ON CONFLICT (guild_id, user_id)
        DO UPDATE SET
          month = excluded.month,
          day = excluded.day,
-         year = excluded.year,
          timezone = excluded.timezone,
          last_fired_year = CASE
            WHEN birthdays.month = excluded.month AND birthdays.day = excluded.day
@@ -76,7 +72,7 @@ export function setBirthday(
          END,
          updated_at = excluded.updated_at`,
     )
-    .run(guildId, userId, date.month, date.day, date.year, timezone, now, now);
+    .run(guildId, userId, date.month, date.day, timezone, now, now);
 }
 
 export function removeBirthday(guildId: string, userId: string): boolean {

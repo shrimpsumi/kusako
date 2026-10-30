@@ -5,39 +5,29 @@ export interface MonthDay {
   day: number;
 }
 
-export interface BirthdayDate extends MonthDay {
-  year: number | null;
-}
-
 export interface BirthdayEntry extends MonthDay {
   lastFiredYear: number | null;
 }
 
-const DATE_PATTERN = /^(?:(\d{4})-)?(\d{1,2})-(\d{1,2})$/;
-const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+const DATE_PATTERN = /^(\d{1,2})-(\d{1,2})$/;
+const MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
 const DAY_MS = 86_400_000;
 
 export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
-export function daysInMonth(month: number, year: number | null): number {
-  if (month === 2) return year !== null && !isLeapYear(year) ? 28 : 29;
-  return MONTH_DAYS[month - 1] ?? 0;
-}
-
-export function parseBirthday(input: string): BirthdayDate | null {
+export function parseBirthday(input: string): MonthDay | null {
   const match = DATE_PATTERN.exec(input.trim());
   if (!match) return null;
 
-  const year = match[1] ? Number(match[1]) : null;
-  const month = Number(match[2]);
-  const day = Number(match[3]);
+  const month = Number(match[1]);
+  const day = Number(match[2]);
 
   if (month < 1 || month > 12) return null;
-  if (day < 1 || day > daysInMonth(month, year)) return null;
+  if (day < 1 || day > (MONTH_DAYS[month - 1] ?? 0)) return null;
 
-  return { year, month, day };
+  return { month, day };
 }
 
 export function candidateDates(now: number): MonthDay[] {

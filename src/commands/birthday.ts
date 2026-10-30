@@ -24,7 +24,7 @@ import { serverEmbed, userEmbed, NO_DMS } from '../utils/style.js';
 const UPCOMING = 10;
 
 const DATE_HELP =
-  "that date didn't look right! use `YYYY-MM-DD` or just `MM-DD`, like `2003-01-15` or `01-15`";
+  "that date didn't look right,, make sure you use `MM-DD` and don't put a year, like `01-15`";
 
 function setupNote(guildId: string): string | null {
   const reply = getEventReply(guildId, 'birthday');
@@ -44,8 +44,8 @@ export const birthday: SlashCommand = {
         .addStringOption((o) =>
           o
             .setName('date')
-            .setDescription('YYYY-MM-DD or MM-DD, e.g. 2003-01-15 or 01-15')
-            .setMaxLength(10)
+            .setDescription('MM-DD, like 01-15. no year !')
+            .setMaxLength(5)
             .setRequired(true),
         )
         .addStringOption((o) =>

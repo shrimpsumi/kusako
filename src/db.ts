@@ -260,7 +260,6 @@ CREATE TABLE IF NOT EXISTS birthdays (
   user_id TEXT NOT NULL,
   month INTEGER NOT NULL,
   day INTEGER NOT NULL,
-  year INTEGER,
   timezone TEXT,
   last_fired_year INTEGER,
   created_at INTEGER NOT NULL,
@@ -326,6 +325,11 @@ function migrate(database: Database.Database): void {
   if (hasTable(database, 'game_stats')) {
     database.exec('DROP TABLE game_stats');
     logger.info('migrated: dropped game_stats');
+  }
+
+  if (hasColumn(database, 'birthdays', 'year')) {
+    database.exec('ALTER TABLE birthdays DROP COLUMN year');
+    logger.info('migrated: dropped birthdays.year');
   }
 
   const gambling = database
