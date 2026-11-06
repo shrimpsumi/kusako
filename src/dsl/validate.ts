@@ -210,6 +210,60 @@ export function ticketGreetingIssues(response: string): string | null {
   return issueMessage([...validateTemplate(nodes), ...ticketIssues(nodes)]);
 }
 
+const STICKY_CONFLICTS = new Map<string, string>([
+  ['split', 'a sticky can only be one message.'],
+  ['delay', 'a sticky can only be one message.'],
+  [
+    'delete_reply',
+    'sako already deletes the old sticky every time it reposts.',
+  ],
+  ['send', 'a sticky has to post in its own channel.'],
+  ['ephemeral', 'everyone in the channel needs to see the sticky.'],
+]);
+
+function stickyReject(name: string): string | null {
+  if (guards.has(name) || name === 'cooldown') {
+    return `{${name}} can't go in a sticky. it reposts whenever people chat, so a failed check would just stop it from reposting :c`;
+  }
+  if (SUBJECT_ARGS.has(name) || name === 'togglerole') {
+    return `{${name}} can't go in a sticky. it reposts whenever people chat, so this would run every time someone talks`;
+  }
+
+  const why = STICKY_CONFLICTS.get(name);
+  return why ? `{${name}} can't go in a sticky,, ${why}` : null;
+}
+
+export function stickyIssues(nodes: Node[]): string[] {
+  const errors: string[] = [];
+  const seen = new Set<string>();
+
+  for (const node of nodes) {
+    if (node.kind !== 'placeholder') continue;
+    if (seen.has(node.name)) continue;
+
+    const why = stickyReject(node.name);
+    if (why) {
+      seen.add(node.name);
+      errors.push(why);
+    }
+  }
+
+  return errors;
+}
+
+export function stickyTemplateIssues(response: string): string | null {
+  const nodes = parse(response);
+  const kept = nodes.filter(
+    (node) => node.kind !== 'placeholder' || stickyReject(node.name) === null,
+  );
+
+  return issueMessage([
+    ...validateTemplate(nodes),
+    ...stickyIssues(nodes),
+    ...subjectlessIssues(kept),
+  ]);
+}
+
 export function validateTemplate(nodes: Node[]): string[] {
   const errors: string[] = [];
   const bound = new Set<string>();
