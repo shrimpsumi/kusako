@@ -28,6 +28,10 @@ export function ticketScope(typeKey: string): string {
   return `ticket:${typeKey}`;
 }
 
+export function stickyScope(channelId: string): string {
+  return `sticky:${channelId}`;
+}
+
 export function getCooldownRemaining(
   guildId: string,
   scope: string,

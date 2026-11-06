@@ -277,7 +277,7 @@ export async function deliver(
   segments: Segment[],
   actions: MessageActions,
   target: DeliveryTarget,
-): Promise<void> {
+): Promise<Message | null> {
   const redirect =
     actions.sendToChannelId && actions.sendToChannelId !== target.channel.id
       ? target.channel.guild.channels.cache.get(actions.sendToChannelId)
@@ -441,4 +441,6 @@ export async function deliver(
       logger.warn({ err }, 'deletetrigger failed');
     }
   }
+
+  return firstSent;
 }

@@ -25,6 +25,7 @@ import { autoresponderScope } from '../services/cooldowns.js';
 import { fireLevelUps } from '../services/levels/fire.js';
 import { handleOwnerCommand } from '../commands/owner.js';
 import { handleRoleMenuInput } from '../services/roleMenus/input.js';
+import { noteStickyMessage } from '../services/stickies/fire.js';
 import { failureEmbed } from '../utils/style.js';
 import { logger } from '../logger.js';
 
@@ -33,6 +34,14 @@ export function registerMessageCreate(client: SakoClient): void {
     if (message.author.bot) return;
     if (await handleOwnerCommand(message)) return;
     if (!message.inGuild()) return;
+
+    noteStickyMessage(message.channel).catch((err) => {
+      logger.error(
+        { err, guild: message.guildId, channel: message.channelId },
+        'sticky check failed',
+      );
+    });
+
     if (!message.member) return;
     if (await handleRoleMenuInput(message)) return;
 
