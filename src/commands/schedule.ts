@@ -32,6 +32,7 @@ import {
 } from '../services/timezone.js';
 import { templateDetailEmbed } from '../utils/templateEmbed.js';
 import { commandMention } from '../utils/commandMentions.js';
+import { formatSeconds } from '../utils/format.js';
 import { serverEmbed, failureEmbed, NO_DMS } from '../utils/style.js';
 
 const REPLY_MAX = 2000;
@@ -112,27 +113,6 @@ function readOnceTime(
     };
   }
   return { at: now + delay * 1000 };
-}
-
-function formatSeconds(seconds: number): string {
-  const units: Array<[number, string]> = [
-    [604_800, 'w'],
-    [86_400, 'd'],
-    [3600, 'h'],
-    [60, 'm'],
-  ];
-
-  let left = seconds;
-  const parts: string[] = [];
-  for (const [size, label] of units) {
-    const n = Math.floor(left / size);
-    if (n > 0) {
-      parts.push(`${n}${label}`);
-      left -= n * size;
-    }
-  }
-
-  return parts.length > 0 ? parts.join(' ') : `${seconds}s`;
 }
 
 function stamp(at: number): string {
