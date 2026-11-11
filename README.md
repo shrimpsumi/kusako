@@ -11,179 +11,75 @@
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/shrimpsumi/kusako?style=flat&labelColor=8f79c9&color=c9b8ec" alt="license" /></a>
 </p>
 
-kusako is a chunky discord bot full of features for your community servers! she can handle economy, level roles, custom usable items, server shops, and has a super extensible autoresponder system. sako is written in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file, so you don't gotta host anything besides her !
+kusako is a mega chunky discord bot built for community servers! she's got autoresponders, welcome messages, leveling, tickets, and a lot more. sako's written entirely in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file !
 
-## overview of sako's features
+## main features
 
-<table>
-<tr>
-<td width="50%" valign="top">
+- **autoresponders**: replies to trigger words, with cooldowns, requirements, and randomness
+- **economy**: server currencies, custom items, inventories, gifting, and shops!
+- **leveling**: XP for chatting, with an optional reply and role for each level
+- **events**: replies for joins, leaves, boosts, and birthdays
+- **tickets**: a panel of buttons that opens private channels for your staff and users
+- **role menus**: pick-your-own-role dropdowns or buttons
+- **embeds**: super awesome embed builder or optional JSON-paste support
+- **scheduled messages**: daily, weekly, every so often, or once!
+- **stickies**: customizable messages/embeds that stick to bottom of channels
 
-### autoresponders !
+## autoresponders: variable placeholder and functions
 
-- matchmodes: exact, starts with, ends with, or includes for triggers
-- message args: words around a trigger become variables
-- guards, effects, and generators: restrict autoresponders, give currency or roles, and handle randomness
-- reply options: react, DM, send a reply to a different channel, or split it into multiple messages
+autoresponder replies can make use of numerous placeholders; there are four types of variables:
 
-### economy !
+- placeholder variables such as `{user}`, `{server.membercount}`, or `{user.balance}`
+- generator functions which create some sort of data: `{range as prize: 30-60}`, then `[prize]` anywhere after
+- guard variables which can gate some autoresponder, example: `{requirebal:100}`, `{requirerole:admin}`, `{cooldown:3600}`
+- functions can update users: `{modifybal:-100}`, `{addrole:verified}`, `{temprole:muted|600}`
 
-- currency: per-server name & emoji
-- items: per-server catalog, and each item can have its own reply when used, written with sako's DSL
-- inventories: server members hold items and gift them to one another
-- shop: listings with a price, optional stock, and role requirements
-- global currency: a balance that follows you to every server
+<details>
+<summary>some autoresponder examples from sako's server!</summary>
 
-### leveling !
-
-- XP per message: 1-10 XP, once per minute
-- level up replies: optional per level, powered by the DSL
-
-### events !
-
-- join and leave: sends a reply in a channel, written with the same tags
-- boost: fires when someone boosts
-- birthdays: members save their birthday with `/birthday set`, and sako celebrates on the day
-- fully templated: an event reply can give roles, attach a saved embed, or add reactions to it
-
-### scheduling !
-
-- posts: daily, weekly, every N minutes, or once at a time
-- timezones: can be set per server
-- temp roles: `{temprole}` gives a role and takes it later
-- self-deleting replies: `{delete_reply}` deletes sako's reply after a few seconds
-
-</td>
-
-<td width="50%" valign="top">
-
-### tickets !
-
-- ticket channels: a customizable panel of buttons, and clicking one opens a private channel
-- ticket types: create as many ticket types as you want, each with its own visible roles, greeting, and cooldowns
-- close and reopen: closing locks the channel and archives it. staff or whoever opened it can reopen it
-
-### embeds !
-
-- saved embeds: create one, name it, then send it using `{embed:name}` in a reply
-- live builder: buttons and modals in discord, with a live preview
-- JSON import: paste from any embed builder site
-
-### minigames !
-
-- `/pat`: give sako headpats and she'll tip you some currency
-- configurable: change how much she tips and how often, or turn it off
-
-### in the works !
-
-- giveaways
-- stickies
-- auto-threads
-- `/leaderboard`
-
-</td>
-</tr>
-</table>
-
-## a few DSL examples
-
-a timed autoresponder reminder for a discord bot minigame. this adds a reaction to the triggering message; then, 480 seconds later, sends the reply:
+timed autoresponder reminder for a discord bot minigame. adds a reaction to the triggering message; then, 8 minutes later, sends the reply ("{user}, your drop is off cooldown !!"):
 
 ```
 {user.nickname as guy}{react:<a:15:1452348277591900343>}{cooldown:480}{delay:480}{user}, your drop is off cooldown !! {error:you're still on cooldown... please wait a bit [guy]~ <:catRose:1338734225993633843> }
 ```
 
-a join event, written just like an autoresponder. fires when someone joins your server:
-
-```
-{addrole:1346588187472039956}{addrole:1346588712091521145}{addrole:1346588148519534683}{addrole:1385742887328677969}{embed:welcome1}{reactreply:<a:wavey:1541205650594468050>}
-```
-
-a boost event, sends an embed and gives the booster 5,000 currency:
+a boost event that sends an embed and gives the booster 5,000 currency:
 
 ```
 {modifybal:5000}{embed:boosted}
 ```
 
-a `.crime` currency command. this has a 1 hour cooldown, gives either a large amount (400-550), regular amount (50-200), or nothing at all. the flavor text, or 'crime' being committed is randomly chosen:
+a `.crime` autoresponder. one hour cooldown, a random crime, and either a jackpot, a regular payout, or nothing:
 
 ```
 {server.currencyemoji as c}{cooldown:3600}{error: can't commit another crime yet! wait for [cooldown.remaining]}{range as jackpot: 400-550}{range as gain: 50-200}{choice as crime: fed kusako beyond salmon instead of a real fish | called kusako a giga dent | gifted sako a chicken biryani scented candle | mega lowballed a sofi bot card }{weightedchoice as roll: 10 big | 40 win | 50 caught}{lockedchoice as del: roll | [jackpot] | [gain] | 0}{lockedchoice as outcome: roll | somehow made bank off it,,, [c] **[jackpot]** | got away with it,, [c] **[gain]** | got caught instantly,,, nothing for you}{modifybal:[del]}you [crime] and [outcome]
 ```
 
-## autoresponders and "replies"
+</details>
 
-a reply is just plain text that can use tags in braces. there are four types of tags that can be used across kusako's features:
+> [!NOTE]
+> check out sako's **[cardboard atelier](https://discord.gg/ytsuErErG5)**, an art, social, and her support hub server! it uses her features pretty much everywhere, so come look around for inspiration or get help!
 
-- **placeholders** fill in: `{user}`, `{server.membercount}`, `{user.balance}`
-- **generators** generate something and remember it: `{range as prize: 30-60}`, then `[prize]` anywhere after
-- **guards** decide whether it fires at all: `{requirebal:100}`, `{requirerole:admin}`, `{cooldown:3600}`
-- **effects** change things: `{modifybal:-100}`, `{addrole:verified}`, `{temprole:muted|600}`
+## permissions
 
-if any guard fails, nothing happens and she'll say why. if they all pass, every effect happens at once!
+kusako needs at the very least **view channels**, **send messages**, **embed links**, **attach files**, and **read message history**. the rest depend on what you use, but are generally recommended:
 
-any typos in tags will show up as raw text, like `{addrol:}`, instead of disappearing. kusako will also reject things that can't work when you save them, instead of misfiring later !
-
-a full list of placeholders and examples can be found here: TODO
-
-## development
-
-make an application in the [discord developer portal](https://discord.com/developers/applications), add a bot to it, and turn on the **server members** and **message content** intents.
-
-invite her with the **bot** and **applications.commands** scopes, using the OAuth2 URL generator in that same portal !
-
-kusako should have at least these permissions:
-
-- **view channels**, **send messages**, **embed links**, **attach files**, **read message history**
 - **add reactions**: `{react}` and `{reactreply}`
 - **use external emojis**: custom emoji in replies, buttons, and dropdowns
 - **manage messages**: `{deletetrigger}` and `{delete_reply}`
-- **manage roles**: `{addrole}`, `{removerole}`, `{temprole}`, `{togglerole}`, role menus, and level roles
+- **manage roles**: role tags, role menus, and level roles
 - **manage nicknames**: `{setnick}`
-- **manage channels**: tickets, since she creates and archives channels
-
-only if you want it: **mention everyone** lets her ping roles that aren't set mentionable, like a `@mods` in a ticket greeting. she never pings @everyone or @here. she doesn't need **administrator** for anything!
+- **manage channels**: tickets
+- **mention everyone**: optional, lets her ping roles that aren't mentionable. @everyone and @here pings are disabled for sako!
 
 > [!IMPORTANT]
 > **make sure sako's role is ABOVE any role you want her to give out** in your server's role list! if her role is below it, she can't add it, and this is the most common reason roles don't work !
 
-then:
+## self hosting
 
-```sh
-pnpm i
-```
-
-create a `.env` in the repo's root:
-
-```
-BOT_TOKEN=
-CLIENT_ID=
-GUILD_ID=
-DB_PATH=
-OWNER_ID=
-LOG_LEVEL=
-```
-
-`BOT_TOKEN` and `CLIENT_ID` are required. `GUILD_ID` is the server to register commands to while developing, but isn't required. `DB_PATH` defaults to `data/sako.db`. `OWNER_ID` unlocks the owner-only `;global` and `;status` text commands! `LOG_LEVEL` defaults to `info`, set it to `debug` for more detailed logs. there's a `.env.example` you can copy too !
-
-```sh
-pnpm register
-pnpm dev
-```
-
-`register` pushes the slash commands to your `GUILD_ID` server, and you'll need to run it again whenever you add or update commands, e.g., adding a subcommand. `pnpm register:global` pushes them globally. sometimes your discord client won't immediately see new commands, a `CTRL + R` usually fixes that !
-
-`pnpm dev` watches and restarts her on every file change. to host her, compile, then run:
-
-```sh
-pnpm build
-pnpm start
-```
-
-> [!NOTE]
-> sako's home is the **[cardboard atelier](https://discord.gg/ytsuErErG5)**, an art and social server that doubles as her support hub. the server utilizes her features extensively, so feel free to join and look around for inspiration or get help!
->
-> https://discord.gg/ytsuErErG5
+1. make an application in the [discord developer portal](https://discord.com/developers/applications), add a bot, and turn on the **server members** and **message content** intents
+2. invite her with the **bot** and **applications.commands** scopes from the OAuth2 URL generator
+3. `pnpm i`, then copy `.env.example` as `.env` and fill it in
 
 ## thank you to
 
