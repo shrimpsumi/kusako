@@ -11,7 +11,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/shrimpsumi/kusako?style=flat&labelColor=8f79c9&color=c9b8ec" alt="license" /></a>
 </p>
 
-kusako is a mega chunky discord bot built for community servers! she's got autoresponders, welcome messages, leveling, tickets, and a lot more. sako's written entirely in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file !
+kusako is a mega chunky discord bot built for community servers! she's got autoresponders, welcome messages, leveling, tickets, and a lot more. sako's written entirely in typescript on [discord.js](https://discord.js.org/) and keeps everything in one sqlite file!
 
 ## main features
 
