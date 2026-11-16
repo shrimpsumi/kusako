@@ -264,6 +264,37 @@ export function stickyTemplateIssues(response: string): string | null {
   ]);
 }
 
+const AUTO_THREAD_CONFLICTS = new Map<string, string>([
+  ['deletetrigger', 'that deletes the post the thread hangs off of!'],
+  ['send', 'the reply goes in the thread.'],
+  ['dm', 'the reply goes in the thread.'],
+  ['ephemeral', 'everyone in the thread needs to see the reply.'],
+  ['replytrigger', 'the thread already hangs off the post.'],
+]);
+
+export function autoThreadIssues(nodes: Node[]): string[] {
+  const errors: string[] = [];
+  const seen = new Set<string>();
+
+  for (const node of nodes) {
+    if (node.kind !== 'placeholder') continue;
+    if (seen.has(node.name)) continue;
+
+    const why = AUTO_THREAD_CONFLICTS.get(node.name);
+    if (why) {
+      seen.add(node.name);
+      errors.push(`{${node.name}} can't go in an auto-thread reply,, ${why}`);
+    }
+  }
+
+  return errors;
+}
+
+export function autoThreadTemplateIssues(response: string): string | null {
+  const nodes = parse(response);
+  return issueMessage([...validateTemplate(nodes), ...autoThreadIssues(nodes)]);
+}
+
 export function validateTemplate(nodes: Node[]): string[] {
   const errors: string[] = [];
   const bound = new Set<string>();
