@@ -24,6 +24,7 @@ import { tickets } from './tickets.js';
 import { rolemenu } from './rolemenu.js';
 import { birthday } from './birthday.js';
 import { sticky } from './sticky.js';
+import { autothread } from './autothread.js';
 
 export const commands: SlashCommand[] = [
   ping,
@@ -50,4 +51,5 @@ export const commands: SlashCommand[] = [
   rolemenu,
   birthday,
   sticky,
+  autothread,
 ];
