@@ -24,6 +24,7 @@ kusako is a mega chunky discord bot built for community servers! she's got autor
 - **embeds**: super awesome embed builder or optional JSON-paste support
 - **scheduled messages**: daily, weekly, every so often, or once!
 - **stickies**: customizable messages/embeds that stick to bottom of channels
+- **auto-threads**: opens a thread on every post in a channel, with an optional reply and close button
 
 ## autoresponders: variable placeholder and functions
 
@@ -70,6 +71,8 @@ kusako needs at the very least **view channels**, **send messages**, **embed lin
 - **manage roles**: role tags, role menus, and level roles
 - **manage nicknames**: `{setnick}`
 - **manage channels**: tickets
+- **create public threads** and **send messages in threads**: auto-threads
+- **manage threads**: locking auto-threads when they close
 - **mention everyone**: optional, lets her ping roles that aren't mentionable. @everyone and @here pings are disabled for sako!
 
 > [!IMPORTANT]
