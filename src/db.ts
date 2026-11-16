@@ -131,6 +131,19 @@ CREATE TABLE IF NOT EXISTS sticky_messages (
   PRIMARY KEY (guild_id, channel_id)
 );
 
+CREATE TABLE IF NOT EXISTS auto_threads (
+  guild_id TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
+  response TEXT NOT NULL,
+  archive_minutes INTEGER NOT NULL,
+  slowmode_seconds INTEGER NOT NULL,
+  close_button INTEGER NOT NULL DEFAULT 0,
+  lock_on_close INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, channel_id)
+);
+
 CREATE TABLE IF NOT EXISTS role_menus (
   guild_id TEXT NOT NULL,
   name TEXT NOT NULL,

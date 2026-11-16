@@ -32,6 +32,10 @@ export function stickyScope(channelId: string): string {
   return `sticky:${channelId}`;
 }
 
+export function autoThreadScope(channelId: string): string {
+  return `autothread:${channelId}`;
+}
+
 export function getCooldownRemaining(
   guildId: string,
   scope: string,
