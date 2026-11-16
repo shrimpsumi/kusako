@@ -269,6 +269,7 @@ export interface DeliveryTarget {
   channel: GuildTextBasedChannel;
   triggerMessage?: Message;
   interaction?: RepliableInteraction;
+  extraRow?: ActionRowBuilder<MessageActionRowComponentBuilder>;
 }
 
 const DM_FAIL_NOTICE = "i couldn't dm you,, check your privacy settings :c";
@@ -300,6 +301,10 @@ export async function deliver(
           target.member?.id,
         )
       : [];
+  if (target.extraRow) {
+    if (buttonRows.length < MAX_ROWS) buttonRows.push(target.extraRow);
+    else logger.warn({ channel: target.channel.id }, 'no room for extra row');
+  }
   const replyTo =
     actions.replyTrigger && destination === target.channel
       ? target.triggerMessage

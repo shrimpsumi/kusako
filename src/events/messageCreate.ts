@@ -26,6 +26,7 @@ import { fireLevelUps } from '../services/levels/fire.js';
 import { handleOwnerCommand } from '../commands/owner.js';
 import { handleRoleMenuInput } from '../services/roleMenus/input.js';
 import { noteStickyMessage } from '../services/stickies/fire.js';
+import { fireAutoThread } from '../services/autoThreads/fire.js';
 import { failureEmbed } from '../utils/style.js';
 import { logger } from '../logger.js';
 
@@ -44,6 +45,13 @@ export function registerMessageCreate(client: SakoClient): void {
 
     if (!message.member) return;
     if (await handleRoleMenuInput(message)) return;
+
+    fireAutoThread(message, message.member).catch((err) => {
+      logger.error(
+        { err, guild: message.guildId, channel: message.channelId },
+        'auto-thread failed',
+      );
+    });
 
     if (
       isLevelingEnabled(message.guildId) &&

@@ -21,6 +21,10 @@ import {
   closeTicket,
   reopenTicket,
 } from '../services/tickets/fire.js';
+import {
+  isAutoThreadCloseId,
+  closeAutoThread,
+} from '../services/autoThreads/fire.js';
 import { buildPage } from '../services/pageRegistry.js';
 import { isBalanceButton, handleBalanceButton } from '../commands/balance.js';
 import { handleSettingsComponents } from '../commands/settings.js';
@@ -85,6 +89,18 @@ export function registerInteractionCreate(client: SakoClient): void {
         await fireDropdownSelection(interaction);
       } catch (err) {
         logger.error({ err, id: interaction.customId }, 'dropdown failed');
+      }
+      return;
+    }
+
+    if (interaction.isButton() && isAutoThreadCloseId(interaction.customId)) {
+      try {
+        await closeAutoThread(interaction);
+      } catch (err) {
+        logger.error(
+          { err, id: interaction.customId },
+          'auto-thread close failed',
+        );
       }
       return;
     }
