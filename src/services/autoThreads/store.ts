@@ -1,14 +1,12 @@
 import { db } from '../../db.js';
 
 export const MAX_AUTO_THREADS_PER_GUILD = 10;
-export const DEFAULT_ARCHIVE_MINUTES = 1440;
 export const DEFAULT_SLOWMODE_SECONDS = 0;
 
 export interface AutoThread {
   guildId: string;
   channelId: string;
   response: string;
-  archiveMinutes: number;
   slowmodeSeconds: number;
   closeButton: boolean;
   lock: boolean;
@@ -20,7 +18,6 @@ export interface NewAutoThread {
   guildId: string;
   channelId: string;
   response?: string;
-  archiveMinutes?: number;
   slowmodeSeconds?: number;
   closeButton?: boolean;
   lock?: boolean;
@@ -34,7 +31,6 @@ interface Row {
   guild_id: string;
   channel_id: string;
   response: string;
-  archive_minutes: number;
   slowmode_seconds: number;
   close_button: number;
   lock_on_close: number;
@@ -47,7 +43,6 @@ function toModel(row: Row): AutoThread {
     guildId: row.guild_id,
     channelId: row.channel_id,
     response: row.response,
-    archiveMinutes: row.archive_minutes,
     slowmodeSeconds: row.slowmode_seconds,
     closeButton: row.close_button === 1,
     lock: row.lock_on_close === 1,
@@ -99,15 +94,14 @@ export function createAutoThread(input: NewAutoThread): CreateAutoThreadResult {
     db()
       .prepare(
         `INSERT INTO auto_threads
-           (guild_id, channel_id, response, archive_minutes, slowmode_seconds,
+           (guild_id, channel_id, response, slowmode_seconds,
             close_button, lock_on_close, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         input.guildId,
         input.channelId,
         input.response ?? '',
-        input.archiveMinutes ?? DEFAULT_ARCHIVE_MINUTES,
         input.slowmodeSeconds ?? DEFAULT_SLOWMODE_SECONDS,
         input.closeButton ? 1 : 0,
         input.lock ? 1 : 0,
@@ -126,7 +120,6 @@ export function createAutoThread(input: NewAutoThread): CreateAutoThreadResult {
 
 export interface AutoThreadEdit {
   response?: string;
-  archiveMinutes?: number;
   slowmodeSeconds?: number;
   closeButton?: boolean;
   lock?: boolean;
@@ -134,7 +127,6 @@ export interface AutoThreadEdit {
 
 const EDIT_COLUMNS: Record<keyof AutoThreadEdit, string> = {
   response: 'response',
-  archiveMinutes: 'archive_minutes',
   slowmodeSeconds: 'slowmode_seconds',
   closeButton: 'close_button',
   lock: 'lock_on_close',

@@ -25,7 +25,11 @@ import {
 import { postSticky } from '../services/stickies/fire.js';
 import { templateDetailEmbed } from '../utils/templateEmbed.js';
 import { commandMention } from '../utils/commandMentions.js';
-import { formatSeconds } from '../utils/format.js';
+import {
+  formatSeconds,
+  previewText,
+  channelChoiceLabel,
+} from '../utils/format.js';
 import { serverEmbed, failureEmbed, NO_DMS } from '../utils/style.js';
 
 const REPLY_MAX = 2000;
@@ -39,18 +43,6 @@ function describe(sticky: Sticky): string {
   return sticky.minSeconds > 0
     ? `after ${messages}, at least ${formatSeconds(sticky.minSeconds)} apart`
     : `after ${messages}`;
-}
-
-function preview(response: string): string {
-  const flat = response.replace(/\s+/g, ' ').trim();
-  return flat.length > 44 ? `${flat.slice(0, 43)}…` : flat;
-}
-
-function choiceLabel(guild: Guild, sticky: Sticky): string {
-  const name = guild.channels.cache.get(sticky.channelId)?.name;
-  const where = name ? `#${name}` : 'deleted channel';
-  const text = `${where} · ${preview(sticky.response)}`;
-  return text.length > 100 ? `${text.slice(0, 99)}…` : text;
 }
 
 function detailEmbed(guild: Guild, sticky: Sticky) {
@@ -296,7 +288,11 @@ export const sticky: SlashCommand = {
     const focused = interaction.options.getFocused().trim().toLowerCase();
     const choices = listStickies(interaction.guildId)
       .map((row) => ({
-        name: choiceLabel(interaction.guild, row),
+        name: channelChoiceLabel(
+          interaction.guild,
+          row.channelId,
+          previewText(row.response),
+        ),
         value: row.channelId,
       }))
       .filter(
@@ -338,7 +334,7 @@ export const sticky: SlashCommand = {
 
       const blocks = rows.map(
         (row) =>
-          `### ${channelMention(row.channelId)}\n${describe(row)} · ${preview(row.response)}`,
+          `### ${channelMention(row.channelId)}\n${describe(row)} · ${previewText(row.response)}`,
       );
       const hint = `<:arrowright:1545483910022959194> ${commandMention('/sticky show')} to read one !`;
 

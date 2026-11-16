@@ -135,7 +135,6 @@ CREATE TABLE IF NOT EXISTS auto_threads (
   guild_id TEXT NOT NULL,
   channel_id TEXT NOT NULL,
   response TEXT NOT NULL,
-  archive_minutes INTEGER NOT NULL,
   slowmode_seconds INTEGER NOT NULL,
   close_button INTEGER NOT NULL DEFAULT 0,
   lock_on_close INTEGER NOT NULL DEFAULT 0,
@@ -355,6 +354,11 @@ function migrate(database: Database.Database): void {
   if (hasColumn(database, 'birthdays', 'year')) {
     database.exec('ALTER TABLE birthdays DROP COLUMN year');
     logger.info('migrated: dropped birthdays.year');
+  }
+
+  if (hasColumn(database, 'auto_threads', 'archive_minutes')) {
+    database.exec('ALTER TABLE auto_threads DROP COLUMN archive_minutes');
+    logger.info('migrated: dropped auto_threads.archive_minutes');
   }
 
   const gambling = database

@@ -223,7 +223,7 @@ export function templateDetailEmbed(
   const trailer = lines.map((line) => `\n-# ${line}`).join('');
 
   const embed = serverEmbed(guild).setDescription(
-    `## ${header}\n${codeBlock(response)}${trailer}`,
+    `## ${header}\n${response.length > 0 ? codeBlock(response) : ''}${trailer}`,
   );
   if (options.footer !== undefined) {
     embed.setFooter({ text: options.footer });

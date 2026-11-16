@@ -8,7 +8,6 @@ import {
   type ButtonInteraction,
   type GuildMember,
   type Message,
-  type ThreadAutoArchiveDuration,
 } from 'discord.js';
 
 import { getAutoThread } from './store.js';
@@ -58,7 +57,6 @@ export async function fireAutoThread(
 
   const thread = await message.startThread({
     name: threadName(message.author.username, message.cleanContent),
-    autoArchiveDuration: config.archiveMinutes as ThreadAutoArchiveDuration,
     rateLimitPerUser: config.slowmodeSeconds,
   });
 

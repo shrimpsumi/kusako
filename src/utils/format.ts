@@ -1,3 +1,5 @@
+import type { Guild } from 'discord.js';
+
 const MONTH_NAMES = [
   'january',
   'february',
@@ -45,4 +47,20 @@ export function formatSeconds(seconds: number): string {
   }
 
   return parts.length > 0 ? parts.join(' ') : `${seconds}s`;
+}
+
+export function previewText(text: string, max = 44): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
+
+export function channelChoiceLabel(
+  guild: Guild,
+  channelId: string,
+  text: string,
+): string {
+  const name = guild.channels.cache.get(channelId)?.name;
+  const where = name ? `#${name}` : 'deleted channel';
+  const label = `${where} · ${text}`;
+  return label.length > 100 ? `${label.slice(0, 99)}…` : label;
 }
